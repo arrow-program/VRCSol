@@ -1,63 +1,94 @@
 # vrcsol GUI / ビルド手順
 
-概要:
-- `gui.py` : Tkinter を使った簡単なGUI。Start/Stop とログ表示、上部に現在のステータス（Aura / Biome）表示を追加しています。言語切替（English / 日本語）が可能で、デフォルトは English です。
-  - **デフォルト設定は exe に埋め込まれます**（`settings.json` をビルドに組み込み）。ユーザーが GUI で変更した設定は `%APPDATA%\\vrcsol\\settings.json` に保存されます（Windows）。
-- `monitor.py` : 元の `__main__.py` と同等の監視ロジック（停止可能）を提供します。ログはすべて英語固定で、各ログ行の先頭にタイムスタンプ（YYYY-MM-DD HH:MM:SS）を追加します。
+---
 
-使い方:
-1. Python (推奨 3.10+) を用意します。Windows なら仮想環境を推奨。
-2. 依存をインストール:
-   pip install python-osc
-3. GUI を実行:
-   python gui.py
+## 🇯🇵 日本語版
 
-.exe化 (PyInstaller):
-1. PyInstaller をインストール:
-   pip install pyinstaller
-2. ワンファイル版を作る例:
-   pyinstaller --onefile --windowed --name vrcsol_gui gui.py
-3. 出力は `dist\vrcsol_gui.exe`
+**vrcsol** は Windows 向けの GUI アプリケーションです。GitHub リリースでは **vrcsol v1.0.exe**（単一の実行ファイル）のみを配布します。
 
-注意点:
-- ウィンドウアプリ（--windowed）にするとコンソールは表示されません。動作ログを確認したい場合は `--windowed` を外してビルドしてください。
-- 一部のアンチウイルスが単一exeを誤検出する場合があります。動作確認はビルド後に実行して確かめてください。
+### 🔧 動作環境
+- Windows 10 / 11（64-bit 推奨）
+- 特別なランタイムは不要（配布された exe に含まれています）
 
-変更方針:
-- 元の `__main__.py` はそのまま保持しました（監視ロジックは `monitor.py` に分離）。
-- 必要があれば `monitor.py` を `__main__.py` のロジックと統合できます。
+### 🚀 インストールと実行方法
+1. GitHub の Releases ページから `vrcsol v1.0.exe` をダウンロードしてください。
+2. ダウンロードしたファイルをダブルクリックして起動します。
+3. または PowerShell / コマンドプロンプトから実行する場合は、exe のあるディレクトリで次のコマンドを実行します：
 
-ご希望なら、実際に `gui.py` を exe にビルドして動作確認（ローカルで）まで実行します。
+   PowerShell:
+   ```powershell
+   Start-Process -FilePath 'vrcsol v1.0.exe'
+   ```
+
+   コマンドプロンプト (CMD):
+   ```cmd
+   "vrcsol v1.0.exe"
+   ```
+
+> ※ ファイル名に空白が含まれるため、引用符で囲むことを推奨します。
+
+### ✅ バージョン確認 / 検証
+- 実行中のウィンドウの「ヘルプ」や「バージョン情報」から確認できる場合があります。
+- ダウンロードしたファイルのハッシュを確認するには PowerShell で：
+  ```powershell
+  Get-FileHash -Path 'vrcsol v1.0.exe' -Algorithm SHA256
+  ```
+
+### ❗ トラブルシューティング
+- 起動しない場合は、PowerShell で直接実行して出力やエラーメッセージを確認してください。
+- ウイルス対策ソフトが誤検知することがあります。信頼できるリリースからダウンロードしてください。
+- 問題が解決しない場合は GitHub に Issue を作成してください。
 
 ---
 
-# English: vrcsol GUI / Build Instructions ✅
+## 🇺🇸 English
 
-Overview:
-- `gui.py`: A simple Tkinter GUI with Start/Stop and a log display. The current status (Aura / Biome) is shown at the top. Language switching (English / 日本語) is available and **English is the default**.
-  - **Default settings are embedded in the executable** (the `settings.json` is included in the build). User changes made via the GUI are saved to `%APPDATA%\\vrcsol\\settings.json` on Windows.
-- `monitor.py`: Implements the monitoring logic equivalent to the original `__main__.py` (can be stopped). All logs are in English and each line is prefixed with a timestamp in the format `YYYY-MM-DD HH:MM:SS`.
+**vrcsol** is a Windows GUI application. On GitHub we publish only the single-file executable **vrcsol v1.0.exe** in the Releases section.
 
-Usage:
-1. Prepare Python (recommended 3.10+). A virtual environment is recommended on Windows.
-2. Install dependencies:
-   pip install python-osc
-3. Run the GUI:
-   python gui.py
+### 🔧 System requirements
+- Windows 10 / 11 (64-bit recommended)
+- No additional runtime required (Python/runtime bundled in the distributed exe)
 
-Packaging to .exe (PyInstaller):
-1. Install PyInstaller:
-   pip install pyinstaller
-2. Example to create a one-file executable:
-   pyinstaller --onefile --windowed --name vrcsol_gui gui.py
-3. The output will be `dist\\vrcsol_gui.exe`.
+### 🚀 How to install & run
+1. Download `vrcsol v1.0.exe` from the GitHub Releases page.
+2. Start by double-clicking the downloaded file.
+3. Or run from PowerShell / Command Prompt:
 
-Notes:
-- The `--windowed` (windowed app) option hides the console. Remove `--windowed` if you want to see runtime logs.
-- Some antivirus software may mistakenly flag single-file executables. Please test the built executable after creation.
+   PowerShell:
+   ```powershell
+   Start-Process -FilePath 'vrcsol v1.0.exe'
+   ```
 
-Design decisions:
-- The original `__main__.py` is kept as-is; monitoring logic was split into `monitor.py`.
-- If desired, `monitor.py` can be merged back into `__main__.py`.
+   Command Prompt (CMD):
+   ```cmd
+   "vrcsol v1.0.exe"
+   ```
 
-If you like, I can build the `gui.py` executable locally and verify its behavior for you. 🔧
+> Note: The filename contains a space—use quotes when running from a shell.
+
+### ✅ Verify version / checksum
+- Check the application's About/Version menu if available.
+- To verify checksum (SHA256) in PowerShell:
+  ```powershell
+  Get-FileHash -Path 'vrcsol v1.0.exe' -Algorithm SHA256
+  ```
+
+### ❗ Troubleshooting
+- If it does not start, run it from PowerShell to see console output and errors.
+- Some antivirus products might flag unsigned executables; download only from the official Releases page.
+- If the problem persists, please open an Issue on the project's GitHub repository.
+
+---
+
+## 📄 License & Support
+- ソースコードはリポジトリに含まれています（開発者向け）。
+- バグ報告やサポートは GitHub の Issue をご利用ください。
+
+---
+
+**簡単なヒント / Quick tip**: リリースページに `vrcsol v1.0.exe` 以外のファイルをアップロードしないでください（公式配布物は exe 単体のみです）。
+
+---
+
+問題や改善提案があれば Issue を作成してください。 ✅
+
