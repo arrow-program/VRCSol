@@ -1,12 +1,12 @@
+[README.ja.md](https://github.com/user-attachments/files/25292666/README.ja.md)
 # vrcsol
 
-VRChat の監視と Discord Webhook 統合の GUI アプリケーション。
+Sol's RNGの監視と、VRCOSC、 Discord Webhook 統合の GUI アプリケーション。
 
 ## 必要環境
 
 - Windows 10 / 11 (64-bit 推奨)
 - Python 3.14 以上（ソースから実行する場合）
-- python-osc パッケージ
 
 フォルダ構成として、ルートに README と Start GUI ショートカット、ソース一式は `source` フォルダー内に配置されています。
 
@@ -15,6 +15,8 @@ VRChat の監視と Discord Webhook 統合の GUI アプリケーション。
 ### 推奨: ショートカットから起動
 
 ルートにある「Start GUI」ショートカットをダブルクリック。
+
+初回起動時は自動的に仮想環境が作成され、必要なパッケージがインストールされます。
 
 ### コマンドラインから実行
 
@@ -31,6 +33,15 @@ cd .\source
 Start-Process -FilePath '.\source\start_gui.bat'
 ```
 
+### 手動で仮想環境をセットアップ
+
+初回起動時に自動的にセットアップされますが、手動でセットアップしたい場合：
+
+```powershell
+cd .\source
+.\setup.bat
+```
+
 ### ソースから開発実行する場合
 
 ```powershell
@@ -38,7 +49,7 @@ cd .\source
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 pip install --upgrade pip
-pip install python-osc
+pip install -r ..\requirements.txt
 python gui.py
 ```
 
