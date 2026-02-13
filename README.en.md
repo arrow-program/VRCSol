@@ -1,12 +1,12 @@
+[README.en.md](https://github.com/user-attachments/files/25292635/README.en.md)
 # vrcsol
 
-VRChat monitoring and Discord Webhook integration GUI application.
+Sol's RNG monitoring to VRChat and Discord Webhook integration GUI application.
 
 ## Requirements
 
 - Windows 10 / 11 (64-bit recommended)
 - Python 3.14 or later (when running from source)
-- python-osc package
 
 The distribution structure consists of the root folder containing README and the Start GUI shortcut, with all source files located in the `source` subfolder.
 
@@ -15,6 +15,8 @@ The distribution structure consists of the root folder containing README and the
 ### Recommended: Start from Shortcut
 
 Double-click the "Start GUI" shortcut in the root folder.
+
+On the first run, the virtual environment will be automatically created and required packages will be installed.
 
 ### Command Line
 
@@ -31,6 +33,15 @@ Or from the root:
 Start-Process -FilePath '.\source\start_gui.bat'
 ```
 
+### Manual Virtual Environment Setup
+
+The virtual environment is automatically set up on first run, but you can also set it up manually:
+
+```powershell
+cd .\source
+.\setup.bat
+```
+
 ### Development: Run from Source
 
 ```powershell
@@ -38,7 +49,7 @@ cd .\source
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 pip install --upgrade pip
-pip install python-osc
+pip install -r ..\requirements.txt
 python gui.py
 ```
 
