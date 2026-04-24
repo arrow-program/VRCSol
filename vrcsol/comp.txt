@@ -1,0 +1,1 @@
+python -m nuitka --standalone --onefile --enable-plugin=tk-inter --include-data-dir="biome icons"="biome icons" --include-data-dir="biome screenshot"="biome screenshot" --include-data-files="settings.json=settings.json" --include-data-files="biome message.txt=biome message.txt" --windows-icon-from-ico=icon.ico --windows-disable-console gui.py
