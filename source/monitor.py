@@ -10,8 +10,7 @@ import datetime
 import mimetypes
 from pythonosc import udp_client
 import pyautogui as pag 
-import io
-from multipart import MultipartParser, MultipartParserError
+
 
 
 # --- 設定 ---
@@ -134,7 +133,7 @@ class Monitor:
                 parts.append(payload_json)
 
                 parts.append(b'--' + boundary.encode('utf-8'))
-                parts.append(f'Content-Disposition: form-data; name="file"; filename="{filename}"'.encode('utf-8'))
+                parts.append(f'Content-Disposition: form-data; name="file[0]"; filename="{filename}"'.encode('utf-8'))
                 parts.append(f'Content-Type: {ctype}'.encode('utf-8'))
                 parts.append(b'')
                 with open(file_path, 'rb') as fh:
@@ -424,7 +423,7 @@ class Monitor:
                                         else None
                                     }
                                     if self._is_rare_biome(data2):
-                                         embed['_screenshot_path'] = SCREENSHOT_DIR
+                                         embed['_local_file_path'] = SCREENSHOT_DIR
                                     # 利用可能な場合は参加 URL を追加
                                     if getattr(self, 'join_url', None):
                                         try:
