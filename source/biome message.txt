@@ -13,3 +13,6 @@
 (end) [Glitch]: [Code 404] has resolved.
 (start) [Cyberspace]: Signal_Recieved | From: Island_SOL
 (end) [Cyberspace]: Signal Lost.
+
+(rare biomes in below)
+[Eggland]: Many colorful eggs are scattered everywhere...
