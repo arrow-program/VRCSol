@@ -10,6 +10,9 @@ import datetime
 import mimetypes
 from pythonosc import udp_client
 import pyautogui as pag 
+import io
+from multipart import MultipartParser, MultipartParserError
+
 
 # --- 設定 ---
 OSC_IP = "127.0.0.1"
@@ -18,7 +21,7 @@ ROBLOX_LOG_DIR = os.path.expanduser('~\\AppData\\Local\\Roblox\\logs')
 TARGET_KEYWORD = "[FLog::Output] [BloxstrapRPC]"
 WINDOWTITLE = "Roblox"
 MESSAGE_FORMAT = "{} : {}"
-
+SCREENSHOT_DIR = ".\\biome screenshot\\screenshot.png"
 
 def get_latest_log_file(directory):
     list_of_files = glob.glob(os.path.join(directory, '*.log'))
@@ -209,7 +212,7 @@ class Monitor:
     def _is_rare_biome(self, biome_name: str) -> bool:
         """バイオームがレア（DREAMSPACE、GLITCH、CYBERSPACE）かどうかをチェック。"""
         try:
-            rare = {'DREAMSPACE', 'GLITCH', 'CYBERSPACE'}
+            rare = {'DREAMSPACE', 'GLITCH', 'CYBERSPACE', 'EGGLAND',}
             return biome_name.upper() in rare
         except Exception:
             return False
@@ -404,7 +407,7 @@ class Monitor:
                                         mention_str = self._get_mention_string()
                                         win = pag.getWindowsWithTitle(WINDOWTITLE)[0]
                                         win.activate()
-                                        pag.screenshot("source\\biome screenshot\\screenshot.png", region=(win.left, win.top, win.width, win.height))  # インポート通りに pag を使用するだけ
+                                        pag.screenshot(".\\biome screenshot\\screenshot.png", region=(win.left, win.top, win.width, win.height))  # インポート通りに pag を使用するだけ
                                         if mention_str:
                                             try:
                                                 self._send_callback(f"Rare biome '{data2}' detected, adding mention: {mention_str}\n")
@@ -420,6 +423,8 @@ class Monitor:
                                         'image': {'url': 'attachment://screenshot.png'} if self._is_rare_biome(data2) 
                                         else None
                                     }
+                                    if self._is_rare_biome(data2):
+                                         embed['_screenshot_path'] = SCREENSHOT_DIR
                                     # 利用可能な場合は参加 URL を追加
                                     if getattr(self, 'join_url', None):
                                         try:

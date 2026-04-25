@@ -1,0 +1,95 @@
+2026-04-25 12:47:11 Loading biome messages from C:\Users\douzh\AppData\Local\Temp\ONEFIL~1\biome message.txt
+2026-04-25 12:47:11 File size: 814 bytes
+2026-04-25 12:47:11 File object mode: r, readable: True
+2026-04-25 12:47:11 DEBUG line 1: '[Windy]: A refreshing and cool wind passes through whe world...'
+2026-04-25 12:47:11   -> LOADED: key=WINDY msg='A refreshing and cool wind passes throug'
+2026-04-25 12:47:11 DEBUG line 2: '[Snowy]: White snow and cold begin to cover the surroundings...'
+2026-04-25 12:47:11   -> LOADED: key=SNOWY msg='White snow and cold begin to cover the s'
+2026-04-25 12:47:11 DEBUG line 3: '[Rainy]: Strong winds and showers sweep through the world...'
+2026-04-25 12:47:11   -> LOADED: key=RAINY msg='Strong winds and showers sweep through t'
+2026-04-25 12:47:11 DEBUG line 4: '[Sand Storm]: A harsh Sand Storm blocks your path...'
+2026-04-25 12:47:11   -> LOADED: key=SANDSTORM msg='A harsh Sand Storm blocks your path...'
+2026-04-25 12:47:11 DEBUG line 5: '[Hell]: A strong and violent energy of chaos overtakes the world...'
+2026-04-25 12:47:11   -> LOADED: key=HELL msg='A strong and violent energy of chaos ove'
+2026-04-25 12:47:11 DEBUG line 6: '[Starfall]: Beautiful and dreamy starlight pours into the world...'
+2026-04-25 12:47:11   -> LOADED: key=STARFALL msg='Beautiful and dreamy starlight pours int'
+2026-04-25 12:47:11 DEBUG line 7: '[Heaven]: A hand of angel leads you into divine place...'
+2026-04-25 12:47:11   -> LOADED: key=HEAVEN msg='A hand of angel leads you into divine pl'
+2026-04-25 12:47:11 DEBUG line 8: '[Corruption]: Poisonous pollution spreads throughout the world...'
+2026-04-25 12:47:11   -> LOADED: key=CORRUPTION msg='Poisonous pollution spreads throughout t'
+2026-04-25 12:47:11 DEBUG line 9: "[Null]: It's too dark here..."
+2026-04-25 12:47:11   -> LOADED: key=NULL msg="It's too dark here..."
+2026-04-25 12:47:11 DEBUG line 10: '(start) [Dreamspace]: You begin to feel sleepy...'
+2026-04-25 12:47:11   -> LOADED: key=DREAMSPACE msg='You begin to feel sleepy...'
+2026-04-25 12:47:11 DEBUG line 11: '(end) [Dreamspace]: Waking up...'
+2026-04-25 12:47:11   -> LOADED: key=DREAMSPACE msg='Waking up...'
+2026-04-25 12:47:11 DEBUG line 12: '(start) [Glitch]: Unexpected error occurred.[Code 404]'
+2026-04-25 12:47:11   -> LOADED: key=GLITCH msg='Unexpected error occurred.[Code 404]'
+2026-04-25 12:47:11 DEBUG line 13: '(end) [Glitch]: [Code 404] has resolved.'
+2026-04-25 12:47:11   -> LOADED: key=GLITCH msg='[Code 404] has resolved.'
+2026-04-25 12:47:11 DEBUG line 14: '(start) [Cyberspace]: Signal_Recieved | From: Island_SOL'
+2026-04-25 12:47:11   -> LOADED: key=CYBERSPACE msg='Signal_Recieved | From: Island_SOL'
+2026-04-25 12:47:11 DEBUG line 15: '(end) [Cyberspace]: Signal Lost.'
+2026-04-25 12:47:11   -> LOADED: key=CYBERSPACE msg='Signal Lost.'
+2026-04-25 12:47:11 Total lines read: 15
+2026-04-25 12:47:11 Total biome messages loaded: 12
+2026-04-25 12:47:11 Biome message keys: ['WINDY', 'SNOWY', 'RAINY', 'SANDSTORM', 'HELL', 'STARFALL', 'HEAVEN', 'CORRUPTION', 'NULL', 'DREAMSPACE', 'GLITCH', 'CYBERSPACE']
+2026-04-25 12:47:11 Monitor requested to start.
+2026-04-25 12:47:11 Monitor started: 0.718.0.7181104_20260425T034436Z_Player_4F410_last.log
+2026-04-25 12:47:11 Webhook URL: https://discord.com/api/webhooks/1466715578264850487/mku0_KKrUmwrnYot9-oz8PhoH1lEEk-F3rdE_Jsy4InpgiEoOYz5sKhNXX1ZcfHVVrXV
+2026-04-25 12:47:11 Webhook headers: {'User-Agent': 'vrcsol/1.0', 'Content-Type': 'application/json'}
+2026-04-25 12:47:11 Webhook payload: {"embeds": [{"title": "Monitor Started", "description": "<t:1777088831:R>", "color": 43520, "timestamp": "2026-04-25T03:47:11.161942Z", "footer": {"text": "vrcsol"}, "author": {"name": "Finally bloomed. UwU"}}]}
+2026-04-25 12:47:12 Discord webhook OK: 204
+2026-04-25 12:47:13 Resolved biome message for 'CYBERSPACE': matched=CYBERSPACE msg='Signal_Recieved | From: Island_SOL'
+2026-04-25 12:47:13 Send error: PyAutoGUI was unable to import pyscreeze. (This is likely because you're running a version of Python that Pillow (which pyscreeze depends on) doesn't support currently.) Please install this module to enable the function you tried to call.
+2026-04-25 12:47:13 Resolved biome message for 'CYBERSPACE': matched=CYBERSPACE msg='Signal_Recieved | From: Island_SOL'
+2026-04-25 12:47:13 Send error: PyAutoGUI was unable to import pyscreeze. (This is likely because you're running a version of Python that Pillow (which pyscreeze depends on) doesn't support currently.) Please install this module to enable the function you tried to call.
+2026-04-25 12:47:13 Resolved biome message for 'CYBERSPACE': matched=CYBERSPACE msg='Signal_Recieved | From: Island_SOL'
+2026-04-25 12:47:13 Send error: PyAutoGUI was unable to import pyscreeze. (This is likely because you're running a version of Python that Pillow (which pyscreeze depends on) doesn't support currently.) Please install this module to enable the function you tried to call.
+2026-04-25 12:47:13 Resolved biome message for 'CYBERSPACE': matched=CYBERSPACE msg='Signal_Recieved | From: Island_SOL'
+2026-04-25 12:47:13 Send error: PyAutoGUI was unable to import pyscreeze. (This is likely because you're running a version of Python that Pillow (which pyscreeze depends on) doesn't support currently.) Please install this module to enable the function you tried to call.
+2026-04-25 12:47:14 Resolved biome message for 'CYBERSPACE': matched=CYBERSPACE msg='Signal_Recieved | From: Island_SOL'
+2026-04-25 12:47:14 Send error: PyAutoGUI was unable to import pyscreeze. (This is likely because you're running a version of Python that Pillow (which pyscreeze depends on) doesn't support currently.) Please install this module to enable the function you tried to call.
+2026-04-25 12:47:14 Resolved biome message for 'CYBERSPACE': matched=CYBERSPACE msg='Signal_Recieved | From: Island_SOL'
+2026-04-25 12:47:14 Send error: PyAutoGUI was unable to import pyscreeze. (This is likely because you're running a version of Python that Pillow (which pyscreeze depends on) doesn't support currently.) Please install this module to enable the function you tried to call.
+2026-04-25 12:47:19 Resolved biome message for 'CYBERSPACE': matched=CYBERSPACE msg='Signal_Recieved | From: Island_SOL'
+2026-04-25 12:47:19 Send error: PyAutoGUI was unable to import pyscreeze. (This is likely because you're running a version of Python that Pillow (which pyscreeze depends on) doesn't support currently.) Please install this module to enable the function you tried to call.
+2026-04-25 12:47:19 Resolved biome message for 'CYBERSPACE': matched=CYBERSPACE msg='Signal_Recieved | From: Island_SOL'
+2026-04-25 12:47:19 Send error: PyAutoGUI was unable to import pyscreeze. (This is likely because you're running a version of Python that Pillow (which pyscreeze depends on) doesn't support currently.) Please install this module to enable the function you tried to call.
+2026-04-25 12:47:19 Resolved biome message for 'CYBERSPACE': matched=CYBERSPACE msg='Signal_Recieved | From: Island_SOL'
+2026-04-25 12:47:19 Send error: PyAutoGUI was unable to import pyscreeze. (This is likely because you're running a version of Python that Pillow (which pyscreeze depends on) doesn't support currently.) Please install this module to enable the function you tried to call.
+2026-04-25 12:47:21 Resolved biome message for 'CYBERSPACE': matched=CYBERSPACE msg='Signal_Recieved | From: Island_SOL'
+2026-04-25 12:47:21 Send error: PyAutoGUI was unable to import pyscreeze. (This is likely because you're running a version of Python that Pillow (which pyscreeze depends on) doesn't support currently.) Please install this module to enable the function you tried to call.
+2026-04-25 12:47:21 Resolved biome message for 'CYBERSPACE': matched=CYBERSPACE msg='Signal_Recieved | From: Island_SOL'
+2026-04-25 12:47:21 Send error: PyAutoGUI was unable to import pyscreeze. (This is likely because you're running a version of Python that Pillow (which pyscreeze depends on) doesn't support currently.) Please install this module to enable the function you tried to call.
+2026-04-25 12:47:21 Resolved biome message for 'CYBERSPACE': matched=CYBERSPACE msg='Signal_Recieved | From: Island_SOL'
+2026-04-25 12:47:21 Send error: PyAutoGUI was unable to import pyscreeze. (This is likely because you're running a version of Python that Pillow (which pyscreeze depends on) doesn't support currently.) Please install this module to enable the function you tried to call.
+2026-04-25 12:47:21 Resolved biome message for 'CYBERSPACE': matched=CYBERSPACE msg='Signal_Recieved | From: Island_SOL'
+2026-04-25 12:47:21 Send error: PyAutoGUI was unable to import pyscreeze. (This is likely because you're running a version of Python that Pillow (which pyscreeze depends on) doesn't support currently.) Please install this module to enable the function you tried to call.
+2026-04-25 12:47:21 Resolved biome message for 'CYBERSPACE': matched=CYBERSPACE msg='Signal_Recieved | From: Island_SOL'
+2026-04-25 12:47:21 Send error: PyAutoGUI was unable to import pyscreeze. (This is likely because you're running a version of Python that Pillow (which pyscreeze depends on) doesn't support currently.) Please install this module to enable the function you tried to call.
+2026-04-25 12:47:25 Resolved biome message for 'CYBERSPACE': matched=CYBERSPACE msg='Signal_Recieved | From: Island_SOL'
+2026-04-25 12:47:25 Send error: Error code from Windows: 0 - この操作を正しく終了しました。
+2026-04-25 12:47:25 Resolved biome message for 'CYBERSPACE': matched=CYBERSPACE msg='Signal_Recieved | From: Island_SOL'
+2026-04-25 12:47:25 Send error: Error code from Windows: 0 - この操作を正しく終了しました。
+2026-04-25 12:47:25 Resolved biome message for 'CYBERSPACE': matched=CYBERSPACE msg='Signal_Recieved | From: Island_SOL'
+2026-04-25 12:47:25 Send error: Error code from Windows: 0 - この操作を正しく終了しました。
+2026-04-25 12:47:28 Resolved biome message for 'CYBERSPACE': matched=CYBERSPACE msg='Signal_Recieved | From: Island_SOL'
+2026-04-25 12:47:28 Send error: PyAutoGUI was unable to import pyscreeze. (This is likely because you're running a version of Python that Pillow (which pyscreeze depends on) doesn't support currently.) Please install this module to enable the function you tried to call.
+2026-04-25 12:47:28 Resolved biome message for 'CYBERSPACE': matched=CYBERSPACE msg='Signal_Recieved | From: Island_SOL'
+2026-04-25 12:47:28 Send error: PyAutoGUI was unable to import pyscreeze. (This is likely because you're running a version of Python that Pillow (which pyscreeze depends on) doesn't support currently.) Please install this module to enable the function you tried to call.
+2026-04-25 12:47:28 Resolved biome message for 'CYBERSPACE': matched=CYBERSPACE msg='Signal_Recieved | From: Island_SOL'
+2026-04-25 12:47:28 Send error: PyAutoGUI was unable to import pyscreeze. (This is likely because you're running a version of Python that Pillow (which pyscreeze depends on) doesn't support currently.) Please install this module to enable the function you tried to call.
+2026-04-25 12:47:29 Resolved biome message for 'CYBERSPACE': matched=CYBERSPACE msg='Signal_Recieved | From: Island_SOL'
+2026-04-25 12:47:29 Send error: PyAutoGUI was unable to import pyscreeze. (This is likely because you're running a version of Python that Pillow (which pyscreeze depends on) doesn't support currently.) Please install this module to enable the function you tried to call.
+2026-04-25 12:47:29 Resolved biome message for 'CYBERSPACE': matched=CYBERSPACE msg='Signal_Recieved | From: Island_SOL'
+2026-04-25 12:47:29 Send error: PyAutoGUI was unable to import pyscreeze. (This is likely because you're running a version of Python that Pillow (which pyscreeze depends on) doesn't support currently.) Please install this module to enable the function you tried to call.
+2026-04-25 12:47:29 Resolved biome message for 'CYBERSPACE': matched=CYBERSPACE msg='Signal_Recieved | From: Island_SOL'
+2026-04-25 12:47:29 Send error: PyAutoGUI was unable to import pyscreeze. (This is likely because you're running a version of Python that Pillow (which pyscreeze depends on) doesn't support currently.) Please install this module to enable the function you tried to call.
+2026-04-25 12:47:33 Monitor stopped.
+2026-04-25 12:47:33 Webhook URL: https://discord.com/api/webhooks/1466715578264850487/mku0_KKrUmwrnYot9-oz8PhoH1lEEk-F3rdE_Jsy4InpgiEoOYz5sKhNXX1ZcfHVVrXV
+2026-04-25 12:47:33 Webhook headers: {'User-Agent': 'vrcsol/1.0', 'Content-Type': 'application/json'}
+2026-04-25 12:47:33 Webhook payload: {"embeds": [{"title": "Monitor Stopped", "description": "<t:1777088853:R>", "color": 11141120, "timestamp": "2026-04-25T03:47:33.170152Z", "footer": {"text": "vrcsol"}, "author": {"name": "Finally bloomed. UwU"}}]}
+2026-04-25 12:47:33 Discord webhook OK: 204
+2026-04-25 12:47:33 Monitor stopped
+
