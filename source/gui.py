@@ -12,7 +12,7 @@ SETTINGS_FILE = os.path.join(os.path.dirname(__file__), "settings.json")
 # ユーザーが書き込み可能な設定位置（実行間で永続的、exe 対応）
 USER_CONFIG_DIR = os.path.join(os.getenv('APPDATA') or os.path.expanduser('~/.config'), 'vrcsol')
 USER_SETTINGS_FILE = os.path.join(USER_CONFIG_DIR, 'settings.json')
-ICON_PATH = "icon.ico"
+ICON_PATH = "./icon.ico"
 LANG_NAMES = {'en': 'English', 'ja': '日本語'}
 TRANSLATIONS = {
     'en': {
