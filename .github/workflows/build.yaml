@@ -25,7 +25,13 @@ jobs:
 
     - name: Build with PyInstaller
       run: |
-        pyinstaller --onefile --noconsole main.py
+        pyinstaller --onefile --windowed --icon=icon.ico \
+        --add-data "biome icons;biome icons" \
+        --add-data "biome screenshot;biome screenshot" \
+        --add-data "settings.json;." \
+        --add-data "biome message.txt;." \
+        --name "VRCSol" \
+        gui.py
         # --onefile: 1つのexeにまとめる
         # --noconsole: 実行時に黒い画面（GUIアプリ等）を出さない設定
 
