@@ -1,0 +1,36 @@
+name: Build EXE
+
+on:
+  push:
+    branches: [ "main" ]  # mainブランチに発火
+
+jobs:
+  build:
+    runs-on: windows-latest  # exe作成のためWindows環境を使用
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'  # 任意のバージョン
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pyinstaller
+        if (Test-Path requirements.txt) { pip install -r requirements.txt }
+
+    - name: Build with PyInstaller
+      run: |
+        pyinstaller --onefile --noconsole main.py
+        # --onefile: 1つのexeにまとめる
+        # --noconsole: 実行時に黒い画面（GUIアプリ等）を出さない設定
+
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: my-application
+        path: dist/*.exe
