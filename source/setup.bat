@@ -1,4 +1,9 @@
-@echo off
+if "%2"=="--debug" (
+    echo Debug mode: show echo.
+    pause
+) else (
+    @echo off
+)
 chcp 65001 >nul
 set PYTHONUTF8=1
 
