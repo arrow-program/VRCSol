@@ -10,8 +10,8 @@ import datetime
 import mimetypes
 from pythonosc import udp_client
 import pyautogui as pag 
-
-
+import win32gui
+import win32con
 
 # --- 設定 ---
 OSC_IP = "127.0.0.1"
@@ -21,6 +21,13 @@ TARGET_KEYWORD = "[FLog::Output] [BloxstrapRPC]"
 WINDOWTITLE = "Roblox"
 MESSAGE_FORMAT = "{} : {}"
 SCREENSHOT_DIR = ".\\biome screenshot\\screenshot.png"
+
+hwnd = win32gui.FindWindow(None, WINDOWTITLE)
+
+
+def set_foreground_by_title(WINDOWTITLE):
+    hwnd = win32gui.FindWindow(None, WINDOWTITLE)
+    win32gui.SetForegroundWindow(hwnd)
 
 def get_latest_log_file(directory):
     list_of_files = glob.glob(os.path.join(directory, '*.log'))
@@ -209,9 +216,10 @@ class Monitor:
             return '', None
 
     def _is_rare_biome(self, biome_name: str) -> bool:
-        """バイオームがレア（DREAMSPACE、GLITCH、CYBERSPACE）かどうかをチェック。"""
+        """バイオームがレア（DREAMSPACE、GLITCH、CYBERSPACE、SINGULARITY）かどうかをチェック。
+        なお、検出のデバッグには、EGGLANDを含めます。これをデプロイする前には必ず削除してください。"""
         try:
-            rare = {'DREAMSPACE', 'GLITCH', 'CYBERSPACE', 'EGGLAND',}
+            rare = {'DREAMSPACE', 'GLITCH', 'CYBERSPACE',  'SINGULARITY'}
             return biome_name.upper() in rare
         except Exception:
             return False
@@ -404,9 +412,28 @@ class Monitor:
                                     mention_str = ''
                                     if self._is_rare_biome(data2):
                                         mention_str = self._get_mention_string()
-                                        win = pag.getWindowsWithTitle(WINDOWTITLE)[0]
-                                        win.activate()
-                                        pag.screenshot(".\\biome screenshot\\screenshot.png", region=(win.left, win.top, win.width, win.height))  # インポート通りに pag を使用するだけ
+                                        wins = pag.getWindowsWithTitle(WINDOWTITLE)
+
+                                        if wins:
+                                            win = wins[0]
+
+                                            try:
+                                                if win.isMinimized:
+                                                    win.restore()
+                                                win.activate()
+                                            except Exception as e:
+                                              self._send_callback(f"Failed to focus window: {e}\n")
+                                            if hwnd:
+                                                if win32gui.IsIconic(hwnd):
+                                                    win32gui.ShowWindow(hwnd, win32con.SW_RESTORE)
+
+                                            win32gui.SetForegroundWindow(hwnd)
+                                        
+                                        region = (win.left, win.top, win.width, win.height)
+                                        time.sleep(1)  # ウィンドウが前面に来るのを待つ
+                                        pag.screenshot(".\\biome screenshot\\screenshot.png", region=region)  # インポート通りに pag を使用するだけ
+                                    else:
+                                        self._send_callback(f"Biome '{data2}' is not rare, no mention or screenshot.\n")
                                         if mention_str:
                                             try:
                                                 self._send_callback(f"Rare biome '{data2}' detected, adding mention: {mention_str}\n")
