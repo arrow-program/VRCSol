@@ -31,7 +31,7 @@ jobs:
     - name: Build with PyInstaller
       working-directory: ./source
       run: |
-        pyinstaller --onefile --windowed --icon=icon.ico --add-data "icon.ico;icon.ico" --add-data "biome icons;biome icons" --add-data "biome screenshot;biome screenshot" --add-data "settings.json;." --add-data "biome message.txt;." --name "VRCSol" gui.py
+        pyinstaller --onefile --windowed --icon=icon.ico --add-data "biome icons;biome icons" --add-data "biome screenshot;biome screenshot" --add-data "settings.json;." --add-data "biome message.txt;." --name "VRCSol" gui.py
 
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
@@ -41,24 +41,9 @@ jobs:
 
     - name: Create GitHub Release
       if: startsWith(github.ref, 'refs/tags/')
-      id: create_release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      uses: softprops/action-gh-release@v2
       with:
-        tag_name: ${{ github.ref_name }}
-        release_name: ${{ github.ref_name }}
-        draft: false
-        prerelease: false
+        files: source/dist/VRCSol.exe
         generate_release_notes: true
-
-    - name: Upload Release Asset
-      if: startsWith(github.ref, 'refs/tags/')
-      uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./source/dist/VRCSol.exe
-        asset_name: VRCSol.exe
-        asset_content_type: application/octet-stream
