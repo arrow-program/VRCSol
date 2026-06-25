@@ -8,15 +8,17 @@ import urllib.request
 import urllib.error
 import datetime
 import mimetypes
+from typing import Optional, Union
 from pythonosc import udp_client
 import pyautogui as pag 
 import win32gui
 import win32con
+from pathlib import Path
 
 # --- 設定 ---
 OSC_IP = "127.0.0.1"
 OSC_PORT = 9000
-ROBLOX_LOG_DIR = os.path.expanduser('~\\AppData\\Local\\Roblox\\logs')
+ROBLOX_LOG_DIR = Path.home() / "AppData" / "Local" / "Roblox" / "logs"
 TARGET_KEYWORD = "[FLog::Output] [BloxstrapRPC]"
 WINDOWTITLE = "Roblox"
 MESSAGE_FORMAT = "{} : {}"
@@ -30,10 +32,13 @@ def set_foreground_by_title(WINDOWTITLE):
     win32gui.SetForegroundWindow(hwnd)
 
 def get_latest_log_file(directory):
-    list_of_files = glob.glob(os.path.join(directory, '*.log'))
-    if not list_of_files:
+    directory = Path(directory)
+    if not directory.exists():
         return None
-    return max(list_of_files, key=os.path.getctime)
+    log_files = list(directory.glob('*.log'))
+    if not log_files:
+        return None
+    return max(log_files, key=lambda p: p.stat().st_mtime)
 
 
 def extract_info_from_line(line):
