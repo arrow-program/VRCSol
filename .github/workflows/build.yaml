@@ -32,6 +32,9 @@ jobs:
     - name: Build with PyInstaller
       working-directory: ./source
       run: |
+
+        if (-not (Test-Path "biome screenshot")) { New-Item -ItemType Directory -Path "biome screenshot" }
+      
         pyinstaller --onefile --windowed --icon="./icon.ico" `
         --add-data "./icon.ico;." `
         --add-data "biome icons;biome icons" `
@@ -39,7 +42,7 @@ jobs:
         --add-data "settings.json;." `
         --add-data "biome message.txt;." `
         --name "VRCSol" gui.py
-         
+        
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
       with:
