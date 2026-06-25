@@ -4,3 +4,4 @@ pyscreeze
 pillow
 multipart
 pywin32
+pathlib
