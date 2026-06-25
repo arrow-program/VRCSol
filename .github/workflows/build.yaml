@@ -32,8 +32,8 @@ jobs:
     - name: Build with PyInstaller
       working-directory: ./source
       run: |
-        pyinstaller --onefile --windowed --icon="source/icon.ico" `
-        --add-data "source/icon.ico;." `
+        pyinstaller --onefile --windowed --icon="./icon.ico" `
+        --add-data "./icon.ico;." `
         --add-data "biome icons;biome icons" `
         --add-data "biome screenshot;biome screenshot" `
         --add-data "settings.json;." `
