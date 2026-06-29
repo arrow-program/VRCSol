@@ -1,461 +1,415 @@
-import tkinter as tk
-from tkinter import ttk, scrolledtext, messagebox
-import threading
 import sys
 import os
 import json
-import time
-import datetime
+from PySide6.QtWidgets import QApplication, QMessageBox, QLineEdit
+from PySide6.QtCore import QFile, Slot, QObject, Signal, QEvent, Qt
+from PySide6.QtUiTools import QUiLoader
+from PySide6.QtGui import QIcon
+from datetime import datetime
+import urllib
+import urllib.request
+
+# ホットキー監視用のライブラリ
+from pynput import keyboard
+
 from monitor import Monitor
 
-SETTINGS_FILE = os.path.join(os.path.dirname(__file__), "settings.json")
-# ユーザーが書き込み可能な設定位置（実行間で永続的、exe 対応）
+# パス設定
+UI_FILE_PATH = os.path.join(os.path.dirname(__file__), "main.ui")
 USER_CONFIG_DIR = os.path.join(os.getenv('APPDATA') or os.path.expanduser('~/.config'), 'vrcsol')
 USER_SETTINGS_FILE = os.path.join(USER_CONFIG_DIR, 'settings.json')
 ICON_PATH = os.path.join(os.path.dirname(__file__), "icon.ico")
+
 LANG_NAMES = {'en': 'English', 'ja': '日本語'}
 TRANSLATIONS = {
     'en': {
         'osc_ip': 'OSC IP:', 'port': 'Port:', 'start': 'Start', 'stop': 'Stop',
         'status_running': 'Running', 'status_stopped': 'Stopped', 'aura': 'Aura:', 'biome': 'Biome:',
         'port_error_title': 'Port Error', 'port_error_msg': 'Please enter an integer port.',
-        'language_label': 'Language:', 'transport_label': 'Send to:', 'webhook_label': 'Discord Webhook:', 'join_label': 'Join URL:', 'embed_author_label': 'Server Name:', 'rare_mention_label': 'Rare Biome Mention:', 'mention_id_label': 'User/Role ID:'
+        'language_label': 'Language:', 'transport_label': 'Send to:', 'webhook_label': 'Discord Webhook:', 
+        'join_label': 'Join URL:', 'embed_author_label': 'Server Name:', 'rare_mention_label': 'Rare Biome Mention:', 
+        'mention_id_label': 'User/Role ID:'
     },
     'ja': {
-        'osc_ip': 'OSC IP:', 'port': 'Port:', 'start': '開始', 'stop': '停止',
+        'osc_ip': 'OSC IP:', 'port': 'ポート:', 'start': '開始', 'stop': '停止',
         'status_running': '起動中', 'status_stopped': '停止', 'aura': 'オーラ:', 'biome': 'バイオーム:',
         'port_error_title': 'Portエラー', 'port_error_msg': '整数のポートを入力してください。',
-        'language_label': '言語:', 'transport_label': '送信先:', 'webhook_label': 'Discord Webhook:', 'join_label': 'Join URL:', 'embed_author_label': 'サーバー名:', 'rare_mention_label': 'レアバイオームでメンション:', 'mention_id_label': 'ユーザー/ロールID:'
+        'language_label': '言語:', 'transport_label': '送信先:', 'webhook_label': 'Discord Webhook:', 
+        'join_label': '参加URL:', 'embed_author_label': 'サーバー名:', 'rare_mention_label': 'レアバイオームでメンション:', 
+        'mention_id_label': 'ユーザー/ロールID:'
     }
-}   
+}
 
-class App(tk.Tk):
+class MonitorSignals(QObject):
+    """別スレッドで動くMonitorクラスやホットキーから、スレッドセーフにGUIへ通知を送るための中継クラス"""
+    log_received = Signal(str)
+    status_received = Signal(str, str)
+    hotkey_triggered = Signal(str)  # ホットキー用のシグナル ('start' または 'stop')
+
+class App(QObject): # QMainWindow から QObject に変更
     def __init__(self):
         super().__init__()
-        self.title("vrcsol GUI")
-        self.geometry("650x500")
-        self.resizable(False, False)
-        self.protocol("WM_DELETE_WINDOW", self.on_close)
-        self.iconbitmap(ICON_PATH)
         
+        # .uiファイルのロード
+        ui_file = QFile(UI_FILE_PATH)
+        if not ui_file.open(QFile.ReadOnly):
+            print(f"Cannot open {UI_FILE_PATH}")
+            sys.exit(-1)
+            
+        loader = QUiLoader()
+        self.ui = loader.load(ui_file) # 第二引数の self を外して競合を回避
+        ui_file.close()
+        
+        # ウィンドウサイズを.uiファイルの定義に固定
+        self.ui.setFixedSize(self.ui.size())
+        
+        if os.path.exists(ICON_PATH):
+            self.ui.setWindowIcon(QIcon(ICON_PATH))
 
         self.monitor = None
-
-        # 現在のステータス（オーラ・バイオーム）
-        self.current_aura = tk.StringVar(value="Unknown")
-        self.current_biome = tk.StringVar(value="Unknown")
-
-        # 設定と実行状態
-        config = self._load_settings()
-        self.lang = config.get('language', 'en')
-        self.transport = config.get('transport', 'osc')
-        self.webhook = config.get('webhook', '')
-        self.join_url = config.get('join_url', '')
-        # サーバー名設定（設定に「server_name」として保存）
-        self.embed_author = config.get('embed_author', '')
-        self.osc_ip = config.get('osc_ip', '127.0.0.1')
-        self.osc_port = config.get('osc_port', 9000)
-        self.mention_type = config.get('mention_type', 'none')
-        self.mention_id = config.get('mention_id', '')
         self.is_running = False
+        self.hk_listener = None
+        self.signals = MonitorSignals()
+        
+        # 設定の読み込み
+        config = self._load_settings()
+        self.lang = config.get('language', 'ja')
+        self.transport = config.get('transport', 'osc')
+        
+        # コンボボックスの初期化
+        self.ui.lang_combobox.addItems([LANG_NAMES['ja'], LANG_NAMES['en']])
+        self.ui.transport_combobox.addItems(['VRCOSC', 'Discord'])
+        self.ui.mention_combobox.addItems(['None', '@everyone', '@here', 'Custom ID'])
+        
+        # 読み込んだ設定をUIへ反映
+        self.ui.ip_entry.setText(config.get('osc_ip', '127.0.0.1'))
+        self.ui.port_entry.setText(str(config.get('osc_port', 9000)))
+        self.ui.webhook_entry.setText(config.get('webhook_url', ''))
+        self.ui.embed_author_entry.setText(config.get('embed_author', ''))
+        self.ui.join_entry.setText(config.get('join_url', ''))
+        self.ui.mention_id_entry.setText(config.get('mention_id', ''))
+        
+        # 💡 追加された LineEdit にホットキー設定を反映（デフォルトは f1 / f2）
+        self.ui.start_hotkey.setText(config.get('start_hotkey', 'f1'))
+        self.ui.stop_hotkey.setText(config.get('stop_hotkey', 'f2'))
+        
+        m_type = config.get('mention_type', 'none').lower()
+        m_map = {'none': 'None', 'everyone': '@everyone', 'here': '@here', 'custom': 'Custom ID'}
+        self.ui.mention_combobox.setCurrentText(m_map.get(m_type, 'None'))
+        
+        self.ui.lang_combobox.setCurrentText(LANG_NAMES.get(self.lang, '日本語'))
+        self.ui.transport_combobox.setCurrentText('VRCOSC' if self.transport == 'osc' else 'Discord')
 
-        self._build()
+        # シグナル・スロットの接続
+        self.ui.lang_combobox.currentIndexChanged.connect(self.on_language_change)
+        self.ui.transport_combobox.currentIndexChanged.connect(self.on_transport_change)
+        self.ui.mention_combobox.currentIndexChanged.connect(self.on_mention_type_change)
+        self.ui.start_btn.clicked.connect(self.start_monitor)
+        self.ui.stop_btn.clicked.connect(self.stop_monitor)
+        self.ui.test_btn.clicked.connect(self.on_test_webhook)
+        
+        # 💡 ホットキー入力欄の変更イベントを接続（Enter時、またはフォーカスが外れた時）
+        self.ui.start_hotkey.editingFinished.connect(self.update_hotkeys)
+        self.ui.stop_hotkey.editingFinished.connect(self.update_hotkeys)
+        
+        # Monitorスレッドからの通知を受け取るシグナル接続
+        self.signals.log_received.connect(self.append_log)
+        self.signals.status_received.connect(self.update_status_display)
+        
+        # ホットキー用のシグナルをスロットに接続
+        self.signals.hotkey_triggered.connect(self.handle_hotkey)
+
+        # ウィンドウを閉じる際のイベントを上書きしてフック
+        self.ui.closeEvent = self.closeEvent
+
+        # 初期状態反映
+        self.on_transport_change()
+        self.on_mention_type_change()
         self.apply_language()
 
-    def _build(self):
-        frame = ttk.Frame(self)
-        frame.pack(fill=tk.X, padx=8, pady=8)
+        # 💡 ホットキーリスナーの初期登録
+        self.update_hotkeys()
 
-        self.ip_label = ttk.Label(frame, text=self._tr('osc_ip'))
-        self.ip_label.grid(row=0, column=0, sticky=tk.W)
-        self.ip_entry = ttk.Entry(frame, width=15)
-        self.ip_entry.insert(0, self.osc_ip)
-        self.ip_entry.grid(row=0, column=1, sticky=tk.W)
+        self.ui.installEventFilter(self)
 
-        self.port_label = ttk.Label(frame, text=self._tr('port'))
-        self.port_label.grid(row=0, column=2, sticky=tk.W, padx=(10,0))
-        self.port_entry = ttk.Entry(frame, width=6)
-        self.port_entry.insert(0, str(self.osc_port))
-        self.port_entry.grid(row=0, column=3, sticky=tk.W)
-
-        # 言語セレクタ
-        self.language_label = ttk.Label(frame, text=self._tr('language_label'))
-        self.language_label.grid(row=0, column=4, sticky=tk.W, padx=(10,0))
-        self.lang_combobox = ttk.Combobox(frame, values=[LANG_NAMES['en'], LANG_NAMES['ja']], width=8, state='readonly')
-        self.lang_combobox.set(LANG_NAMES.get(self.lang, LANG_NAMES['en']))
-        self.lang_combobox.grid(row=0, column=5, sticky=tk.W)
-        self.lang_combobox.bind('<<ComboboxSelected>>', self.on_language_change)
-
-        # トランスポート セレクタと Discord webhook エントリ（行 1）
-        self.transport_label = ttk.Label(frame, text=self._tr('transport_label'))
-        self.transport_label.grid(row=1, column=0, sticky=tk.W, pady=(6,0))
-        self.transport_combobox = ttk.Combobox(frame, values=['VRCOSC', 'Discord'], width=10, state='readonly')
-        self.transport_combobox.set('VRCOSC' if self.transport == 'osc' else 'Discord')
-        self.transport_combobox.grid(row=1, column=1, sticky=tk.W, padx=(0,10), pady=(6,0))
-        self.transport_combobox.bind('<<ComboboxSelected>>', self.on_transport_change)
-
-        self.webhook_label = ttk.Label(frame, text=self._tr('webhook_label'))
-        self.webhook_label.grid(row=1, column=2, sticky=tk.W, pady=(6,0))
-        self.webhook_entry = ttk.Entry(frame, width=50)
-        self.webhook_entry.insert(0, self.webhook)
-        self.webhook_entry.grid(row=1, column=3, columnspan=5, sticky=tk.W, pady=(6,0))
-
-        # 埋め込み作成者と参加 URL（行 2）
-        self.embed_author_label = ttk.Label(frame, text=self._tr('embed_author_label'))
-        self.embed_author_label.grid(row=2, column=0, sticky=tk.W, pady=(6,0))
-        self.embed_author_entry = ttk.Entry(frame, width=24)
-        self.embed_author_entry.insert(0, self.embed_author)
-        self.embed_author_entry.grid(row=2, column=1, sticky=tk.W, pady=(6,0))
-
-        self.join_label = ttk.Label(frame, text=self._tr('join_label'))
-        self.join_label.grid(row=2, column=2, sticky=tk.W, pady=(6,0))
-        self.join_entry = ttk.Entry(frame, width=40)
-        self.join_entry.insert(0, self.join_url)
-        self.join_entry.grid(row=2, column=3, columnspan=5, sticky=tk.W, pady=(6,0))
-        
-        # テスト webhook ボタン（手動送信）
-        self.test_webhook_btn = ttk.Button(frame, text='Test Webhook', command=self.on_test_webhook)
-        self.test_webhook_btn.grid(row=3, column=3, sticky=tk.W, pady=(6,0))
-        
-        # メンション設定（行 4）- レアバイオームのみ
-        self.rare_mention_label = ttk.Label(frame, text=self._tr('rare_mention_label'))
-        self.rare_mention_label.grid(row=4, column=0, sticky=tk.W, pady=(6,0))
-        self.mention_combobox = ttk.Combobox(frame, values=['None', '@everyone', '@here', 'Custom ID'], width=15, state='readonly')
-        mention_display = {
-            'none': 'None',
-            'everyone': '@everyone',
-            'here': '@here',
-            'custom': 'Custom ID'
-        }
-        self.mention_combobox.set(mention_display.get(self.mention_type, 'None'))
-        self.mention_combobox.grid(row=4, column=1, sticky=tk.W, padx=(0,10), pady=(6,0))
-        self.mention_combobox.bind('<<ComboboxSelected>>', self.on_mention_type_change)
-        
-        self.mention_id_label = ttk.Label(frame, text=self._tr('mention_id_label'))
-        self.mention_id_label.grid(row=4, column=2, sticky=tk.W, pady=(6,0))
-        self.mention_id_entry = ttk.Entry(frame, width=30)
-        self.mention_id_entry.insert(0, self.mention_id)
-        self.mention_id_entry.grid(row=4, column=3, columnspan=2, sticky=tk.W, pady=(6,0))
-        
-        # カスタムでない場合は最初は mention_id_entry を無効化
-        if self.mention_type != 'custom':
-            self.mention_id_entry.config(state='disabled')
-        
-        # 行 5 の高さを大きなボタン用に設定（デフォルトの 4 倍）
-        frame.rowconfigure(5, minsize=80)
-        
-        # 開始と停止ボタン（行 5）- 他のコントロール下の大きなボタン
-        self.stop_btn = ttk.Button(frame, text=self._tr('stop'), command=self.stop_monitor, state=tk.DISABLED, width=24)
-        self.stop_btn.grid(row=5, column=0, columnspan=2, sticky=tk.NSEW, pady=(12,6), padx=(5,0))
-
-        self.start_btn = ttk.Button(frame, text=self._tr('start'), command=self.start_monitor, width=24)
-        self.start_btn.grid(row=5, column=3, columnspan=3, sticky=tk.NSEW, pady=(12,6), padx=(0,6))
-        
-        # トランスポート/ウィジェット状態を設定
-        try:
-            self.on_transport_change()
-        except Exception:
-            pass
-
-        # ステータス表示（上半分）: オーラ・バイオーム
-        status_frame = ttk.Frame(self)
-        status_frame.pack(fill=tk.X, padx=8, pady=(4,2))
-        self.aura_label = ttk.Label(status_frame, text=self._tr('aura'))
-        self.aura_label.grid(row=0, column=0, sticky=tk.W)
-        ttk.Label(status_frame, textvariable=self.current_aura, font=("TkDefaultFont", 12, "bold")).grid(row=0, column=1, sticky=tk.W, padx=(4,20))
-        self.biome_label = ttk.Label(status_frame, text=self._tr('biome'))
-        self.biome_label.grid(row=0, column=2, sticky=tk.W)
-        ttk.Label(status_frame, textvariable=self.current_biome, font=("TkDefaultFont", 12, "bold")).grid(row=0, column=3, sticky=tk.W)
-
-        self.status_label = ttk.Label(self, text=self._tr('status_stopped'), foreground="red")
-        self.status_label.pack(anchor=tk.W, padx=8)
-
-        # ログ（下半分）
-        self.log_text = scrolledtext.ScrolledText(self, state='disabled', height=12)
-        self.log_text.pack(fill=tk.BOTH, expand=True, padx=8, pady=(4,8))
-
-    def append_log(self, text):
-        def _append():
-            self.log_text.configure(state='normal')
-            self.log_text.insert(tk.END, text)
-            self.log_text.see(tk.END)
-            self.log_text.configure(state='disabled')
-        self.after(0, _append)
-
-    def update_status(self, aura, biome):
-        def _update():
-            self.current_aura.set(aura)
-            self.current_biome.set(biome)
-        self.after(0, _update)
-
-    def _load_settings(self):
-        # キー付き辞書を返す: language, transport, webhook, osc_ip, osc_port, mention_type, mention_id
-        # 優先順位:
-        # 1) %APPDATA% のユーザー設定（永続的）
-        # 2) 埋め込まれたデフォルト設定（exe またはプロジェクトにバンドル）
-        # 3) ハードコードされたデフォルト
-        try:
-            if os.path.exists(USER_SETTINGS_FILE):
-                with open(USER_SETTINGS_FILE, 'r', encoding='utf-8') as f:
-                    d = json.load(f)
-                    return {
-                        'language': d.get('language', 'en'),
-                        'transport': d.get('transport', 'osc'),
-                        'webhook': d.get('webhook', ''),
-                        'osc_ip': d.get('osc_ip', '127.0.0.1'),
-                        'osc_port': d.get('osc_port', 9000),
-                        'join_url': d.get('join_url', ''),
-                        'embed_author': d.get('embed_author', ''),
-                        'mention_type': d.get('mention_type', 'none'),
-                        'mention_id': d.get('mention_id', '')
-                    }
-        except Exception:
-            pass
-
-        # 埋め込まれたデフォルトを読み込もうとする（PyInstaller にバンドルされている場合は sys._MEIPASS にある）
-        try:
-            if getattr(sys, 'frozen', False):
-                embedded_path = os.path.join(sys._MEIPASS, 'settings.json')
-            else:
-                embedded_path = SETTINGS_FILE
-            if os.path.exists(embedded_path):
-                with open(embedded_path, 'r', encoding='utf-8') as f:
-                    d = json.load(f)
-                    return {
-                        'language': d.get('language', 'en'),
-                        'transport': d.get('transport', 'osc'),
-                        'webhook': d.get('webhook', ''),
-                        'osc_ip': d.get('osc_ip', '127.0.0.1'),
-                        'osc_port': d.get('osc_port', 9000),
-                        'join_url': d.get('join_url', ''),
-                        'embed_author': d.get('embed_author', ''),
-                        'mention_type': d.get('mention_type', 'none'),
-                        'mention_id': d.get('mention_id', '')
-                    }
-        except Exception:
-            pass
-
-        return {'language': 'en', 'transport': 'osc', 'webhook': '', 'osc_ip': '127.0.0.1', 'osc_port': 9000, 'join_url': '', 'embed_author': '', 'mention_type': 'none', 'mention_id': ''}    
-
-    def _save_settings(self):
-        try:
-            os.makedirs(USER_CONFIG_DIR, exist_ok=True)
-            # メンション コンボボックスの表示を設定値にマップ
-            mention_map = {
-                'None': 'none',
-                '@everyone': 'everyone',
-                '@here': 'here',
-                'Custom ID': 'custom'
-            }
-            data = {
-                'language': self.lang,
-                'transport': getattr(self, 'transport', 'osc'),
-                'webhook': self.webhook_entry.get().strip() if hasattr(self, 'webhook_entry') else getattr(self, 'webhook', ''),
-                'join_url': self.join_entry.get().strip() if hasattr(self, 'join_entry') else getattr(self, 'join_url', ''),
-                'embed_author': self.embed_author_entry.get().strip() if hasattr(self, 'embed_author_entry') else getattr(self, 'embed_author', ''),
-                'osc_ip': self.ip_entry.get().strip(),
-                'osc_port': int(self.port_entry.get().strip()) if self.port_entry.get().strip().isdigit() else self.osc_port,
-                'mention_type': mention_map.get(self.mention_combobox.get() if hasattr(self, 'mention_combobox') else 'None', 'none'),
-                'mention_id': self.mention_id_entry.get().strip() if hasattr(self, 'mention_id_entry') else ''
-            }
-            with open(USER_SETTINGS_FILE, 'w', encoding='utf-8') as f:
-                json.dump(data, f, ensure_ascii=False, indent=2)
-        except Exception:
-            pass
+    def eventFilter(self, obj, event):
+        """keyPressEventの代わりにeventFilterを使ってキー入力を捕捉する"""
+        if event.type() == QEvent.KeyPress:
+            if event.key() in (Qt.Key_Enter, Qt.Key_Return):
+                focused_widget = self.ui.focusWidget()
+                if isinstance(focused_widget, QLineEdit):
+                    focused_widget.clearFocus()
+                    return True # イベントを消費して終了
+        return super().eventFilter(obj, event)
 
     def _tr(self, key):
-        return TRANSLATIONS.get(self.lang, TRANSLATIONS['en']).get(key, key)
+        return TRANSLATIONS.get(self.lang, TRANSLATIONS['ja']).get(key, key)
+    
 
     def apply_language(self):
-        # 現在の言語に従って UI テキストを更新
-        self.ip_label.config(text=self._tr('osc_ip'))
-        self.port_label.config(text=self._tr('port'))
-        self.start_btn.config(text=self._tr('start'))
-        self.stop_btn.config(text=self._tr('stop'))
-        self.aura_label.config(text=self._tr('aura'))
-        self.biome_label.config(text=self._tr('biome'))
-        # ステータス テキストを更新
-        self.status_label.config(text=self._tr('status_running') if self.is_running else self._tr('status_stopped'))
-        # コンボボックス表示を更新
-        try:
-            self.lang_combobox.set(LANG_NAMES.get(self.lang, LANG_NAMES['en']))
-        except Exception:
-            pass
-        # トランスポート/webhook ラベルを更新
-        try:
-            self.language_label.config(text=self._tr('language_label'))
-            self.transport_label.config(text=self._tr('transport_label'))
-            self.webhook_label.config(text=self._tr('webhook_label'))
-            self.join_label.config(text=self._tr('join_label'))
-            self.embed_author_label.config(text=self._tr('embed_author_label'))
-            self.rare_mention_label.config(text=self._tr('rare_mention_label'))
-            self.mention_id_label.config(text=self._tr('mention_id_label'))
-        except Exception:
-            pass
-
-    def on_language_change(self, event=None):
-        sel = self.lang_combobox.get()
-        self.lang = 'en' if sel == LANG_NAMES['en'] else 'ja'
-        self._save_settings()
-        self.apply_language()
-
-    def on_transport_change(self, event=None):
-        sel = self.transport_combobox.get()
-        self.transport = 'osc' if sel == 'VRCOSC' else 'discord'
-        # enable/disable relevant widgets
-        if self.transport == 'discord':
-            self.ip_entry.config(state='disabled')
-            self.port_entry.config(state='disabled')
-            self.webhook_entry.config(state='normal')
-            self.join_entry.config(state='normal')
-            try:
-                self.embed_author_entry.config(state='normal')
-            except Exception:
-                pass
-            try:
-                if hasattr(self, 'test_webhook_btn'):
-                    self.test_webhook_btn.config(state='normal')
-            except Exception:
-                pass
+        """翻訳データに基づいてGUIテキストを書き換える"""
+        self.ui.osc_ip_label.setText(self._tr('osc_ip'))
+        self.ui.port_label.setText(self._tr('port'))
+        self.ui.language_label.setText(self._tr('language_label'))
+        self.ui.transport_label.setText(self._tr('transport_label'))
+        self.ui.webhook_label.setText(self._tr('webhook_label'))
+        self.ui.embed_author_label.setText(self._tr('embed_author_label'))
+        self.ui.join_label.setText(self._tr('join_label'))
+        self.ui.rare_mention_label.setText(self._tr('rare_mention_label'))
+        self.ui.mention_id_label.setText(self._tr('mention_id_label'))
+        
+        self.ui.start_btn.setText(self._tr('start'))
+        self.ui.stop_btn.setText(self._tr('stop'))
+        self.ui.aura_label.setText(self._tr('aura'))
+        self.ui.biome_label.setText(self._tr('biome'))
+        
+        if self.is_running:
+            self.ui.status_label.setText(self._tr('status_running'))
         else:
-            self.ip_entry.config(state='normal')
-            self.port_entry.config(state='normal')
-            self.webhook_entry.config(state='disabled')
-            self.join_entry.config(state='disabled')
+            self.ui.status_label.setText(self._tr('status_stopped'))
+
+    def _load_settings(self):
+        if os.path.exists(USER_SETTINGS_FILE):
             try:
-                self.embed_author_entry.config(state='disabled')
+                with open(USER_SETTINGS_FILE, 'r', encoding='utf-8') as f:
+                    return json.load(f)
             except Exception:
-                pass
-            try:
-                if hasattr(self, 'test_webhook_btn'):
-                    self.test_webhook_btn.config(state='disabled')
-            except Exception:
-                pass
-        self._save_settings()
+                return {}
+        return {}
 
-    def on_mention_type_change(self, event=None):
-        selected = self.mention_combobox.get()
-        if selected == 'Custom ID':
-            self.mention_id_entry.config(state='normal')
-        else:
-            self.mention_id_entry.config(state='disabled')
-        self._save_settings()
-
-    def log_message_en(self, msg):
-        ts = time.strftime("%Y-%m-%d %H:%M:%S")
-        self.append_log(f"{ts} {msg}\n")
-
-    def start_monitor(self):
-        if self.monitor:
-            self.log_message_en("Monitor already running.")
-            return
-
-        # Determine transport
-        self.transport = 'osc' if (self.transport_combobox.get() == 'VRCOSC') else 'discord'
-
-        if self.transport == 'discord':
-            webhook = self.webhook_entry.get().strip()
-            if not webhook:
-                messagebox.showerror('Webhook Error', 'Please enter a Discord webhook URL.')
-                return
-
-            join = self.join_entry.get().strip() if hasattr(self, 'join_entry') else ''
-            embed_author = self.embed_author_entry.get().strip() if hasattr(self, 'embed_author_entry') else ''
-            thumbnail = self.thumbnail_entry.get().strip() if hasattr(self, 'thumbnail_entry') else ''
-            
-            # Get mention settings
-            mention_map = {
-                'None': 'none',
-                '@everyone': 'everyone',
-                '@here': 'here',
-                'Custom ID': 'custom'
-            }
-            mention_type = mention_map.get(self.mention_combobox.get() if hasattr(self, 'mention_combobox') else 'None', 'none')
-            mention_id = self.mention_id_entry.get().strip() if hasattr(self, 'mention_id_entry') else ''
-            
-            self.monitor = Monitor(message_callback=self.append_log, status_callback=self.update_status, transport='discord', webhook_url=webhook, join_url=join, embed_author=embed_author, thumbnail_url=thumbnail, mention_type=mention_type, mention_id=mention_id)
-        else:
-            ip = self.ip_entry.get().strip()
-            try:
-                port = int(self.port_entry.get().strip())
-            except ValueError:
-                messagebox.showerror(self._tr('port_error_title'), self._tr('port_error_msg'))
-                return
-            self.monitor = Monitor(osc_ip=ip, osc_port=port, message_callback=self.append_log, status_callback=self.update_status, transport='osc')
-
-        started = self.monitor.start()
-        if started:
-            self.is_running = True
-            self.status_label.config(text=self._tr('status_running'), foreground='green')
-            self.start_btn.config(state=tk.DISABLED)
-            self.stop_btn.config(state=tk.NORMAL)
-            # Monitor will emit a timestamped "Monitor started" message itself; we can also note the request
-            self.log_message_en("Monitor requested to start.")
-        else:
-            self.log_message_en("Monitor already running.")
-    def stop_monitor(self):
-        if not self.monitor:
-            return
-        self.monitor.stop()
-        self.monitor = None
-        self.is_running = False
-        self.status_label.config(text=self._tr('status_stopped'), foreground='red')
-        self.start_btn.config(state=tk.NORMAL)
-        self.stop_btn.config(state=tk.DISABLED)
-        self.log_message_en("Monitor stopped.")
-        # ステータスをリセット
-        self.current_aura.set("Unknown")
-        self.current_biome.set("Unknown")
-
-    def on_test_webhook(self):
-        webhook = self.webhook_entry.get().strip() if hasattr(self, 'webhook_entry') else getattr(self, 'webhook', '')
-        if not webhook:
-            messagebox.showerror('Webhook Error', 'Please enter a Discord webhook URL.')
-            return
-
-        join = self.join_entry.get().strip() if hasattr(self, 'join_entry') else ''
-        embed_author = self.embed_author_entry.get().strip() if hasattr(self, 'embed_author_entry') else ''
-
-        # Create a temporary Monitor instance for sending the test webhook
-        m = Monitor(message_callback=self.append_log, status_callback=None, transport='discord', webhook_url=webhook, join_url=join, embed_author=embed_author, thumbnail_url=None)
-
-        embed = {
-            'title': 'vrcsol Webhook Test',
-            'description': 'This is a test message from the GUI.',
-            'color': 0x00AAFF,
-            'timestamp': datetime.datetime.utcnow().isoformat() + 'Z',
-            'footer': {'text': 'vrcsol'}
+    def _save_settings(self):
+        os.makedirs(USER_CONFIG_DIR, exist_ok=True)
+        m_map = {'None': 'none', '@everyone': 'everyone', '@here': 'here', 'Custom ID': 'custom'}
+        config = {
+            'language': self.lang,
+            'transport': 'osc' if self.ui.transport_combobox.currentText() == 'VRCOSC' else 'discord',
+            'osc_ip': self.ui.ip_entry.text(),
+            'osc_port': int(self.ui.port_entry.text()) if self.ui.port_entry.text().isdigit() else 9000,
+            'webhook_url': self.ui.webhook_entry.text(),
+            'embed_author': self.ui.embed_author_entry.text(),
+            'join_url': self.ui.join_entry.text(),
+            'mention_type': m_map.get(self.ui.mention_combobox.currentText(), 'none'),
+            'mention_id': self.ui.mention_id_entry.text(),
+            # 💡 新しいホットキー文字列を保存
+            'start_hotkey': self.ui.start_hotkey.text(),
+            'stop_hotkey': self.ui.stop_hotkey.text()
         }
-        if embed_author:
-            embed['author'] = {'name': embed_author}
+        try:
+            with open(USER_SETTINGS_FILE, 'w', encoding='utf-8') as f:
+                json.dump(config, f, indent=4, ensure_ascii=False)
+        except Exception as e:
+            print(f"Failed to save settings: {e}")
 
-        ok = m._post_discord(embed=embed)
-        self.log_message_en(f"Test webhook send result: {ok}")
-        if ok:
-            messagebox.showinfo('Webhook Test', 'Test webhook sent successfully.')
-        else:
-            messagebox.showerror('Webhook Test', 'Test webhook failed. See log for details.')
+    def _format_hotkey(self, key_text):
+        """💡 pynputが認識できる形式（例: f1 -> <f1>, ctrl+alt+a -> <ctrl>+<alt>+a）に整形する"""
+        key_text = key_text.strip().lower()
+        if not key_text:
+            return None
+            
+        # 単体のファンクションキーなどの場合は <> で囲む
+        if key_text in ['f1', 'f2', 'f3', 'f4', 'f5', 'f6', 'f7', 'f8', 'f9', 'f10', 'f11', 'f12']:
+            return f"<{key_text}>"
+        return key_text
 
-    def on_close(self):
+    @Slot()
+    def update_hotkeys(self):
+        """💡 ユーザーの入力に合わせてグローバルホットキーの登録をアップデートする"""
+        # 既存のリスナーを停止
+        if self.hk_listener:
+            self.hk_listener.stop()
+            self.hk_listener = None
+
+        self._save_settings()
+
+        start_key = self._format_hotkey(self.ui.start_hotkey.text())
+        stop_key = self._format_hotkey(self.ui.stop_hotkey.text())
+
+        hotkeys_map = {}
+        if start_key:
+            hotkeys_map[start_key] = lambda: self.signals.hotkey_triggered.emit('start')
+        if stop_key:
+            hotkeys_map[stop_key] = lambda: self.signals.hotkey_triggered.emit('stop')
+
+        if hotkeys_map:
+            try:
+                self.hk_listener = keyboard.GlobalHotKeys(hotkeys_map)
+                self.hk_listener.start()
+            except Exception as e:
+                self.ui.log_text.append(f"[Hotkey] Failed to register hotkeys: {e}")
+
+    @Slot()
+    def on_language_change(self):
+        self.lang = 'ja' if self.ui.lang_combobox.currentText() == '日本語' else 'en'
+        self.apply_language()
+        self._save_settings()
+
+    @Slot()
+    def on_transport_change(self):
+        is_discord = self.ui.transport_combobox.currentText() == 'Discord'
+        self.ui.ip_entry.setEnabled(not is_discord)
+        self.ui.port_entry.setEnabled(not is_discord)
+        self.ui.webhook_entry.setEnabled(is_discord)
+        self.ui.embed_author_entry.setEnabled(is_discord)
+        self.ui.join_entry.setEnabled(is_discord)
+        self.ui.mention_combobox.setEnabled(is_discord)
+        self.ui.mention_id_entry.setEnabled(is_discord and self.ui.mention_combobox.currentText() == 'Custom ID')
+        self._save_settings()
+
+    @Slot()
+    def on_mention_type_change(self):
+        is_custom = self.ui.mention_combobox.currentText() == 'Custom ID'
+        is_discord = self.ui.transport_combobox.currentText() == 'Discord'
+        self.ui.mention_id_entry.setEnabled(is_custom and is_discord)
+        self._save_settings()
+
+    @Slot(str)
+    def handle_hotkey(self, action):
+        """メインスレッド側で安全に開始・停止をハンドリングする"""
+        if action == 'start' and not self.is_running:
+            self.ui.log_text.append(f"[Hotkey] Start key pressed. Starting monitor...")
+            self.start_monitor()
+        elif action == 'stop' and self.is_running:
+            self.ui.log_text.append(f"[Hotkey] Stop key pressed. Stopping monitor...")
+            self.stop_monitor()
+
+    @Slot()
+    def start_monitor(self):
+        port_text = self.ui.port_entry.text()
+        if self.ui.transport_combobox.currentText() == 'VRCOSC' and not port_text.isdigit():
+            QMessageBox.critical(self.ui, self._tr('port_error_title'), self._tr('port_error_msg'))
+            return
+
+        self._save_settings()
+        
+        m_map = {'None': 'none', '@everyone': 'everyone', '@here': 'here', 'Custom ID': 'custom'}
+        
+        self.monitor = Monitor(
+            osc_ip=self.ui.ip_entry.text(),
+            osc_port=int(port_text) if port_text.isdigit() else 9000,
+            transport='osc' if self.ui.transport_combobox.currentText() == 'VRCOSC' else 'discord',
+            webhook_url=self.ui.webhook_entry.text(),
+            join_url=self.ui.join_entry.text(),
+            embed_author=self.ui.embed_author_entry.text(),
+            mention_type=m_map.get(self.ui.mention_combobox.currentText(), 'none'),
+            mention_id=self.ui.mention_id_entry.text(),
+            message_callback=lambda text: self.signals.log_received.emit(text),
+            status_callback=lambda d1, d2: self.signals.status_received.emit(d1, d2)
+        )
+        
+        if self.monitor.start():
+            self.is_running = True
+            self.ui.status_label.setText(self._tr('status_running'))
+            self.ui.status_label.setStyleSheet("color: green;")
+            self.ui.start_btn.setEnabled(False)
+            self.ui.stop_btn.setEnabled(True)
+
+    @Slot()
+    def stop_monitor(self):
         if self.monitor:
             self.monitor.stop()
-        self._save_settings()
-        self.destroy()
+            self.monitor = None
+        self.is_running = False
+        self.ui.status_label.setText(self._tr('status_stopped'))
+        self.ui.status_label.setStyleSheet("color: red;")
+        self.ui.start_btn.setEnabled(True)
+        self.ui.stop_btn.setEnabled(False)
 
+    @Slot(str)
+    def append_log(self, text):
+        self.ui.log_text.append(text.strip())
+
+    @Slot(str, str)
+    def update_status_display(self, aura, biome):
+        self.ui.current_aura_val.setText(aura)
+        self.ui.current_biome_val.setText(biome)
+
+    @Slot()
+    def on_test_webhook(self):
+        import json
+        import urllib.request
+        import urllib.error
+        from datetime import datetime
+
+        webhook_url = self.ui.webhook_entry.text().strip()
+        embed_author = self.ui.embed_author_entry.text().strip()
+
+        if not webhook_url:
+            self.ui.log_text.append("[Test] Error: Webhook URL is empty.")
+            return
+
+        self.ui.log_text.append("[Test] Sending exact test embed to Discord...")
+
+        now = datetime.now()
+        time_str = f"{now.year}/{now.month:02d}/{now.day:02d} {now.hour}:{now.minute:02d}"
+
+        embed = {
+            "title": "vrcsol Webhook Test",
+            "description": "This is a test message from the GUI.",
+            "color": 0x00A2FF,
+            "footer": {
+                "text": f"vrcsol • {time_str}"
+            }
+        }
+
+        if embed_author:
+            embed["author"] = {
+                "name": embed_author
+            }
+
+        payload = {
+            "username": "femboy winter garden",
+            "embeds": [embed]
+        }
+
+        try:
+            json_data = json.dumps(payload).encode("utf-8")
+            req = urllib.request.Request(
+                webhook_url,
+                data=json_data,
+                headers={
+                    "Content-Type": "application/json",
+                    "User-Agent": "vrcsol-client"
+                },
+                method="POST"
+            )
+
+            with urllib.request.urlopen(req, timeout=10) as response:
+                status = response.getcode()
+                if status in (200, 204):
+                    self.ui.log_text.append("[Test] Test Webhook sent successfully! UwU")
+                else:
+                    self.ui.log_text.append(f"[Test] Failed. Status code: {status}")
+
+        except urllib.error.HTTPError as e:
+            error_body = e.read().decode("utf-8", errors="ignore")
+            self.ui.log_text.append(f"[Test] HTTP Error {e.code}: {error_body}")
+        except Exception as e:
+            self.ui.log_text.append(f"[Test] Connection Error: {e}")
+
+    def closeEvent(self, event):
+        # アプリ終了時にホットキーリスナーを停止させる
+        if self.hk_listener:
+            self.hk_listener.stop()
+        self.stop_monitor()
+        event.accept()
+
+    # 既存のメソッドの後に追記します
+    def keyPressEvent(self, event):
+        """Enterキーでフォーカス中のQLineEditからフォーカスを外す"""
+        if event.key() in (Qt.Key_Enter, Qt.Key_Return):
+            focused_widget = self.focusWidget()
+            # フォーカスがあるのがQLineEditの場合のみ外す
+            if isinstance(focused_widget, QLineEdit):
+                focused_widget.clearFocus()
+        else:
+            # それ以外のキー操作はデフォルトの挙動を維持
+            super().keyPressEvent(event)
 
 def main():
-    app = App()
-    app.mainloop()
+    app = QApplication(sys.argv)
+    window = App()
+    window.ui.show()
+    sys.exit(app.exec())
 
 if __name__ == '__main__':
-    try:
-        main()
-    except Exception:
-        import traceback, sys
-        traceback.print_exc()
-        try:
-            input('エラーが発生しました。Enterキーを押して終了します...')
-        except Exception:
-            pass
-        # re-raise to ensure non-zero exit code for calling batch
-        raise
+    main()
