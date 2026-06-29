@@ -1,0 +1,392 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>560</width>
+    <height>497</height>
+   </rect>
+  </property>
+  <property name="focusPolicy">
+   <enum>Qt::ClickFocus</enum>
+  </property>
+  <property name="windowTitle">
+   <string>vrcsol GUI</string>
+  </property>
+  <widget class="QWidget" name="main_widget">
+   <layout class="QGridLayout" name="gridLayout">
+    <item row="22" column="0">
+     <widget class="QTextEdit" name="log_text">
+      <property name="readOnly">
+       <bool>true</bool>
+      </property>
+     </widget>
+    </item>
+    <item row="0" column="0">
+     <widget class="QFrame" name="form_frame">
+      <property name="frameShape">
+       <enum>QFrame::StyledPanel</enum>
+      </property>
+      <layout class="QGridLayout" name="gridLayout_2">
+       <item row="1" column="0">
+        <layout class="QGridLayout" name="gridLayout_3">
+         <item row="0" column="0">
+          <widget class="QLabel" name="osc_ip_label">
+           <property name="text">
+            <string>OSC IP:</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="6">
+          <widget class="QLabel" name="port_label">
+           <property name="text">
+            <string>Port:</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="9">
+          <widget class="QLabel" name="language_label">
+           <property name="text">
+            <string>Language:</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="10">
+          <widget class="QComboBox" name="lang_combobox"/>
+         </item>
+         <item row="0" column="4">
+          <widget class="QLineEdit" name="ip_entry">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>60</width>
+             <height>16777215</height>
+            </size>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="7">
+          <widget class="QLineEdit" name="port_entry">
+           <property name="maximumSize">
+            <size>
+             <width>40</width>
+             <height>16777215</height>
+            </size>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="8">
+          <spacer name="horizontalSpacer">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>41</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+        </layout>
+       </item>
+       <item row="10" column="0">
+        <layout class="QHBoxLayout" name="row5">
+         <item>
+          <widget class="QPushButton" name="stop_btn">
+           <property name="font">
+            <font>
+             <pointsize>29</pointsize>
+            </font>
+           </property>
+           <property name="styleSheet">
+            <string notr="true">QPushButton {
+    background-color: #ff0000;
+    color: black;
+    border: none;
+}
+
+QPushButton:hover {
+    background-color: #ff6e6e;
+}
+
+QPushButton:pressed {
+    background-color: #610000;
+}
+
+QPushButton:checked {
+    background-color: #610000; /* ここを暗い色にする */
+    color: black;
+    border: 1px solid #333;
+}</string>
+           </property>
+           <property name="text">
+            <string>Stop</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="start_btn">
+           <property name="font">
+            <font>
+             <pointsize>29</pointsize>
+            </font>
+           </property>
+           <property name="styleSheet">
+            <string notr="true">QPushButton {
+    background-color: #32a852;
+    color: black;
+    border: none;
+}
+
+QPushButton:hover {
+    background-color: #85e69f;
+}
+
+QPushButton:pressed {
+    background-color: #2a4531;
+}
+
+QPushButton:checked {
+    background-color: #2a4531; /* ここを暗い色にする */
+    color: black;
+    border: 1px solid #333;
+}</string>
+           </property>
+           <property name="text">
+            <string>Start</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item row="2" column="0">
+        <layout class="QHBoxLayout" name="row2">
+         <item>
+          <widget class="QLabel" name="transport_label">
+           <property name="text">
+            <string>Send to:</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QComboBox" name="transport_combobox"/>
+         </item>
+         <item>
+          <widget class="QLabel" name="webhook_label">
+           <property name="text">
+            <string>Discord Webhook:</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLineEdit" name="webhook_entry"/>
+         </item>
+        </layout>
+       </item>
+       <item row="3" column="0">
+        <layout class="QHBoxLayout" name="row3">
+         <item>
+          <widget class="QLabel" name="join_label">
+           <property name="text">
+            <string>Join URL:</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLineEdit" name="join_entry"/>
+         </item>
+         <item>
+          <widget class="QPushButton" name="test_btn">
+           <property name="text">
+            <string>Test Webhook</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item row="9" column="0">
+        <layout class="QHBoxLayout" name="row4">
+         <item>
+          <widget class="QLabel" name="rare_mention_label">
+           <property name="text">
+            <string>Rare Biome Mention:</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QComboBox" name="mention_combobox"/>
+         </item>
+         <item>
+          <widget class="QLabel" name="mention_id_label">
+           <property name="text">
+            <string>User/Role ID:</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLineEdit" name="mention_id_entry"/>
+         </item>
+        </layout>
+       </item>
+       <item row="4" column="0">
+        <layout class="QGridLayout" name="gridLayout_6">
+         <property name="bottomMargin">
+          <number>0</number>
+         </property>
+         <item row="0" column="0">
+          <widget class="QLabel" name="embed_author_label">
+           <property name="maximumSize">
+            <size>
+             <width>71</width>
+             <height>16777215</height>
+            </size>
+           </property>
+           <property name="font">
+            <font>
+             <pointsize>9</pointsize>
+            </font>
+           </property>
+           <property name="text">
+            <string>Server Name:</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="1">
+          <widget class="QLineEdit" name="embed_author_entry"/>
+         </item>
+        </layout>
+       </item>
+       <item row="11" column="0">
+        <layout class="QGridLayout" name="gridLayout_7">
+         <property name="bottomMargin">
+          <number>0</number>
+         </property>
+         <item row="0" column="0">
+          <widget class="QLineEdit" name="stop_hotkey">
+           <property name="styleSheet">
+            <string notr="true">QLineEdit::placeholder {
+    color: #aaaaaa;  /* 薄いグレーに設定 */
+    font-style: italic; /* 斜体にする */
+}</string>
+           </property>
+           <property name="placeholderText">
+            <string>hotkey edit here</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="1">
+          <widget class="QLineEdit" name="start_hotkey">
+           <property name="styleSheet">
+            <string notr="true">QLineEdit::placeholder {
+    color: #aaaaaa;  /* 薄いグレーに設定 */
+    font-style: italic; /* 斜体にする */
+}</string>
+           </property>
+           <property name="placeholderText">
+            <string>hotkey edit here</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+      </layout>
+     </widget>
+    </item>
+    <item row="21" column="0">
+     <widget class="QLabel" name="status_label">
+      <property name="text">
+       <string>Stopped</string>
+      </property>
+     </widget>
+    </item>
+    <item row="1" column="0">
+     <layout class="QHBoxLayout" name="status_h">
+      <item>
+       <widget class="QLabel" name="aura_label">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="sizeIncrement">
+         <size>
+          <width>0</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="text">
+         <string>Aura:      </string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="current_aura_val">
+        <property name="font">
+         <font>
+          <pointsize>19</pointsize>
+         </font>
+        </property>
+        <property name="text">
+         <string>Unknown</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+    <item row="9" column="0" rowspan="2">
+     <layout class="QGridLayout" name="gridLayout_5">
+      <property name="rightMargin">
+       <number>0</number>
+      </property>
+      <property name="bottomMargin">
+       <number>0</number>
+      </property>
+      <item row="0" column="0">
+       <widget class="QLabel" name="biome_label">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>50</width>
+          <height>16777215</height>
+         </size>
+        </property>
+        <property name="text">
+         <string>Biome:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QLabel" name="current_biome_val">
+        <property name="font">
+         <font>
+          <pointsize>19</pointsize>
+         </font>
+        </property>
+        <property name="text">
+         <string>Unknown</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+   </layout>
+  </widget>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
