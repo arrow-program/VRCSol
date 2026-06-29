@@ -41,6 +41,7 @@ jobs:
         --add-data "biome screenshot;biome screenshot" `
         --add-data "settings.json;." `
         --add-data "biome message.txt;." `
+        --add-data "main.ui;." `
         --name "VRCSol" gui.py
         
     - name: Upload Artifact
