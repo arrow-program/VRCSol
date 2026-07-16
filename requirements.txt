@@ -6,3 +6,4 @@ multipart
 pywin32
 PySide6
 pynput
+pyinstaller

@@ -14,6 +14,17 @@ import pyautogui as pag
 import win32gui
 import win32con
 from pathlib import Path
+from PIL import ImageGrab  # マルチモニターキャプチャのためにインポート
+
+# WindowsのDPIスケーリングによる座標のズレを防ぐため、プロセス単位でDPIアウェアネスを有効化
+try:
+    import ctypes
+    ctypes.windll.shcore.SetProcessDpiAwareness(2) # PROCESS_PER_MONITOR_DPI_AWARE
+except Exception:
+    try:
+        ctypes.windll.user32.SetProcessDPIAware()
+    except Exception:
+        pass
 
 # --- 設定 ---
 OSC_IP = "127.0.0.1"
@@ -22,7 +33,8 @@ ROBLOX_LOG_DIR = Path.home() / "AppData" / "Local" / "Roblox" / "logs"
 TARGET_KEYWORD = "[FLog::Output] [BloxstrapRPC]"
 WINDOWTITLE = "Roblox"
 MESSAGE_FORMAT = "{} : {}"
-SCREENSHOT_DIR = ".\\biome screenshot\\screenshot.png"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+SCREENSHOT_DIR = os.path.join(BASE_DIR, "biome screenshot", "screenshot.png")
 
 hwnd = win32gui.FindWindow(None, WINDOWTITLE)
 
@@ -120,37 +132,51 @@ class Monitor:
                 payload['embeds'] = [embed]
             if components:
                 payload['components'] = components
-            # embedに特殊キー '_local_file_path' が含まれている場合、ファイルを添付
-            file_path = None
-            if embed and isinstance(embed, dict) and embed.get('_local_file_path'):
-                file_path = embed.pop('_local_file_path')
+
+            # embedに特殊キー '_local_file_path' または '_local_file_paths' が含まれている場合、複数ファイルを添付可能に拡張
+            file_paths = []
+            if embed and isinstance(embed, dict):
+                if embed.get('_local_file_path'):
+                    file_paths.append(embed.pop('_local_file_path'))
+                if embed.get('_local_file_paths'):
+                    file_paths.extend(embed.pop('_local_file_paths'))
 
             headers = {
                 'User-Agent': 'vrcsol/1.0'
             }
 
-            if file_path and os.path.exists(file_path):
-                # payload_jsonとファイルでマルチパート/フォームデータを準備
+            # 重複を排除し、存在する有効なファイルパスのみをリスト化
+            valid_file_paths = []
+            for p in file_paths:
+                if p and os.path.exists(p) and p not in valid_file_paths:
+                    valid_file_paths.append(p)
+
+            if valid_file_paths:
+                # payload_jsonと複数のファイルをマルチパート/フォームデータに構築
                 boundary = '----vrcsolboundary%08x' % int(time.time() * 1000)
                 headers['Content-Type'] = f'multipart/form-data; boundary={boundary}'
 
                 payload_json = json.dumps(payload, ensure_ascii=False).encode('utf-8')
-                filename = os.path.basename(file_path)
-                ctype = mimetypes.guess_type(filename)[0] or 'application/octet-stream'
-
                 parts = []
+                
+                # JSONデータを追加
                 parts.append(b'--' + boundary.encode('utf-8'))
                 parts.append(b'Content-Disposition: form-data; name="payload_json"')
                 parts.append(b'')
                 parts.append(payload_json)
 
-                parts.append(b'--' + boundary.encode('utf-8'))
-                parts.append(f'Content-Disposition: form-data; name="file[0]"; filename="{filename}"'.encode('utf-8'))
-                parts.append(f'Content-Type: {ctype}'.encode('utf-8'))
-                parts.append(b'')
-                with open(file_path, 'rb') as fh:
-                    file_bytes = fh.read()
-                parts.append(file_bytes)
+                # すべての対象ファイルをフォームデータに格納
+                for idx, file_path in enumerate(valid_file_paths):
+                    filename = os.path.basename(file_path)
+                    ctype = mimetypes.guess_type(filename)[0] or 'application/octet-stream'
+
+                    parts.append(b'--' + boundary.encode('utf-8'))
+                    parts.append(f'Content-Disposition: form-data; name="file[{idx}]"; filename="{filename}"'.encode('utf-8'))
+                    parts.append(f'Content-Type: {ctype}'.encode('utf-8'))
+                    parts.append(b'')
+                    with open(file_path, 'rb') as fh:
+                        file_bytes = fh.read()
+                    parts.append(file_bytes)
 
                 parts.append(b'--' + boundary.encode('utf-8') + b'--')
                 body = b"\r\n".join(parts) + b"\r\n"
@@ -221,10 +247,10 @@ class Monitor:
             return '', None
 
     def _is_rare_biome(self, biome_name: str) -> bool:
-        """バイオームがレア（DREAMSPACE、GLITCH、CYBERSPACE、SINGULARITY）かどうかをチェック。
-        なお、検出のデバッグには、EGGLANDを含めます。これをデプロイする前には必ず削除してください。"""
+        """バイオームがレア（DREAMSPACE、GLITCH、CYBERSPACE）かどうかをチェック。
+        なお、検出のデバッグには、NORMALを含めます。これをデプロイする前には必ず削除してください。"""
         try:
-            rare = {'DREAMSPACE', 'GLITCH', 'CYBERSPACE',  'SINGULARITY'}
+            rare = {'DREAMSPACE', 'GLITCH', 'CYBERSPACE'}
             return biome_name.upper() in rare
         except Exception:
             return False
@@ -413,30 +439,21 @@ class Monitor:
                                     except Exception:
                                         pass
                                     
-                                    # これがレアバイオームかどうかをチェックして、メンションを準備
+                                    # これがレアバイオームかどうかをチェックして、メンションとスクリーンショットを準備
                                     mention_str = ''
+                                    screenshot_taken = False
                                     if self._is_rare_biome(data2):
                                         mention_str = self._get_mention_string()
                                         wins = pag.getWindowsWithTitle(WINDOWTITLE)
-
                                         if wins:
                                             win = wins[0]
-
-                                            try:
-                                                if win.isMinimized:
-                                                    win.restore()
-                                                win.activate()
-                                            except Exception as e:
-                                              self._send_callback(f"Failed to focus window: {e}\n")
-                                            if hwnd:
-                                                if win32gui.IsIconic(hwnd):
-                                                    win32gui.ShowWindow(hwnd, win32con.SW_RESTORE)
-
-                                            win32gui.SetForegroundWindow(hwnd)
-                                        
-                                        region = (win.left, win.top, win.width, win.height)
-                                        time.sleep(1)  # ウィンドウが前面に来るのを待つ
-                                        pag.screenshot(".\\biome screenshot\\screenshot.png", region=region)  # インポート通りに pag を使用するだけ
+                                            region = (win.left, win.top, win.width, win.height)
+                                            self._send_callback(f"DEBUG: Screenshot region = {region}\n")
+                                            # スクリーンショットを1回だけ確実に行う
+                                            if self._focus_and_screenshot(region):
+                                                screenshot_taken = True
+                                        else:
+                                            self._send_callback("Error: Could not find Roblox window for screenshot.\n")
                                     else:
                                         self._send_callback(f"Biome '{data2}' is not rare, no mention or screenshot.\n")
                                         if mention_str:
@@ -451,11 +468,19 @@ class Monitor:
                                         'color': self._biome_color(data2),
                                         'timestamp': datetime.datetime.utcnow().isoformat() + 'Z',
                                         'footer': {'text': 'vrcsol'},
-                                        'image': {'url': 'attachment://screenshot.png'} if self._is_rare_biome(data2) 
-                                        else None
+                                        'image': {'url': 'attachment://screenshot.png'} if (self._is_rare_biome(data2) and screenshot_taken) else None
                                     }
-                                    if self._is_rare_biome(data2):
-                                         embed['_local_file_path'] = SCREENSHOT_DIR
+
+                                    # 送信するファイルを蓄積するリストを用意（上書き問題の根本解決）
+                                    local_files = []
+
+                                    if self._is_rare_biome(data2) and screenshot_taken:
+                                        if os.path.exists(SCREENSHOT_DIR):
+                                            self._send_callback(f"DEBUG: Screenshot exists at {SCREENSHOT_DIR}, size: {os.path.getsize(SCREENSHOT_DIR)} bytes\n")
+                                            local_files.append(SCREENSHOT_DIR)
+                                        else:
+                                            self._send_callback("DEBUG: ERROR - Screenshot file was NOT created.\n")
+
                                     # 利用可能な場合は参加 URL を追加
                                     if getattr(self, 'join_url', None):
                                         try:
@@ -481,9 +506,14 @@ class Monitor:
                                         if icon_path:
                                             # 添付メカニズムを使用: クライアントがファイルを添付して参照
                                             embed['thumbnail'] = {'url': f'attachment://{os.path.basename(icon_path)}'}
-                                            embed['_local_file_path'] = icon_path
+                                            # アイコンファイルもリストに追加（上書きせずに両方送信）
+                                            local_files.append(icon_path)
                                     except Exception:
                                         pass
+
+                                    # 蓄積したファイルリストを送信用の拡張キーにセット
+                                    if local_files:
+                                        embed['_local_file_paths'] = local_files
 
                                     ok = self._post_discord(content=mention_str if mention_str else None, embed=embed)
                                     if ok:
@@ -631,6 +661,43 @@ class Monitor:
             pass
         return None
 
+    def _focus_and_screenshot(self, region):
+        """ウィンドウを確実にアクティブにしてマルチモニター対応のスクリーンショットを撮るための改善版関数"""
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                hwnd = win32gui.FindWindow(None, WINDOWTITLE)
+                if not hwnd or not win32gui.IsWindow(hwnd):
+                    self._send_callback(f"Attempt {attempt+1}: Window not found.\n")
+                    time.sleep(1)
+                    continue
+                
+                if win32gui.IsIconic(hwnd):
+                    win32gui.ShowWindow(hwnd, win32con.SW_RESTORE)
+                win32gui.BringWindowToTop(hwnd)
+                win32gui.SetActiveWindow(hwnd)
+                
+                time.sleep(0.5)
+                
+                # マルチモニターとサブモニター（マイナス座標系）に完全対応したImageGrabを使用
+                left, top, width, height = region
+                bbox = (int(left), int(top), int(left + width), int(top + height))
+                
+                # キャプチャ用ディレクトリの存在確認と作成
+                os.makedirs(os.path.dirname(SCREENSHOT_DIR), exist_ok=True)
+                
+                # all_screens=True により、サブモニターにあるウィンドウを正しく等倍座標でキャプチャ
+                im = ImageGrab.grab(bbox=bbox, all_screens=True)
+                im.save(SCREENSHOT_DIR)
+                
+                self._send_callback("Screenshot captured successfully.\n")
+                return True
+            except Exception as e:
+                self._send_callback(f"Attempt {attempt+1} failed: {e}\n")
+                time.sleep(1)
+        self._send_callback("Failed to capture screenshot after retries.\n")
+        return False
+
     def _biome_color(self, biome_name: str):
         try:
             m = {
@@ -646,7 +713,8 @@ class Monitor:
                 'NULL': 0x000000,
                 'DREAMSPACE': 0xD95E9F,
                 'GLITCHED': 0x1E4C3F,
-                'CYBERSPACE': 0x06438B
+                'CYBERSPACE': 0x06438B,
+                'SINGULARITY':0xf59842
             }
             if not biome_name:
                 return 0x000000
