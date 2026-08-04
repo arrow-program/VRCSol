@@ -30,7 +30,7 @@ except Exception:
 OSC_IP = "127.0.0.1"
 OSC_PORT = 9000
 ROBLOX_LOG_DIR = Path.home() / "AppData" / "Local" / "Roblox" / "logs"
-TARGET_KEYWORD = "[FLog::Output] [BloxstrapRPC]"
+TARGET_KEYWORD = "[BloxstrapRPC]"
 WINDOWTITLE = "Roblox"
 MESSAGE_FORMAT = "{} : {}"
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -345,12 +345,12 @@ class Monitor:
                 self._send_callback("No Discord webhook URL configured.\n")
                 return
 
-        latest_log = get_latest_log_file(self.log_dir)
-        if not latest_log:
+        current_log = get_latest_log_file(self.log_dir)
+        if not current_log:
             self._send_callback("No log file found.\n")
             return
 
-        self._send_callback(f"Monitor started: {os.path.basename(latest_log)}\n")
+        self._send_callback(f"Monitor started: {os.path.basename(current_log)}\n")
         
         # Discord トランスポートを使用している場合、Discord スタート埋め込みを送信
         if self.transport == 'discord':
@@ -372,9 +372,33 @@ class Monitor:
         last_sent_time = 0
 
         try:
-            with open(latest_log, 'r', encoding='utf-8', errors='ignore') as f:
-                f.seek(0, 2)
-                while not self._stop_event.is_set():
+            f = open(current_log, 'r', encoding='utf-8', errors='ignore')
+            f.seek(0, os.SEEK_END)  # ファイルの末尾に移動して新しい行を待つ              
+
+            while not self._stop_event.is_set():
+
+                    latest = get_latest_log_file(self.log_dir)
+
+                    if latest and latest != current_log:
+                        self._send_callback(
+                            f"Detected new Roblox log:\n"
+                            f"Old: {current_log.name}\n"
+                            f"New: {latest.name}\n"
+                        )
+
+                        try:
+                            f.close()
+                        except Exception:
+                            pass
+
+                        current_log = latest
+
+                        f = open(current_log, "r", encoding="utf-8", errors="ignore")
+                        f.seek(0, os.SEEK_END)
+
+                        self._send_callback(f"Now monitoring {current_log.name}\n")
+                        continue
+
                     line = f.readline()
                     if not line:
                         time.sleep(0.1)
@@ -594,6 +618,11 @@ class Monitor:
                                     self._send_callback(f"Send error: {e}\n")
         except Exception as e:
             self._send_callback(f"Monitoring error: {e}\n")
+        finally:
+            try:
+                f.close()
+            except Exception:
+                pass
 
         # Discord トランスポートを使用している場合、Discord ストップ埋め込みを送信
         if self.transport == 'discord':
