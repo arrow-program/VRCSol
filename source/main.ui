@@ -17,372 +17,805 @@
    <string>vrcsol GUI</string>
   </property>
   <widget class="QWidget" name="main_widget">
-   <layout class="QGridLayout" name="gridLayout">
-    <item row="22" column="0">
-     <widget class="QTextEdit" name="log_text">
-      <property name="readOnly">
-       <bool>true</bool>
+   <layout class="QVBoxLayout" name="verticalLayout_main">
+    <item>
+     <widget class="QTabWidget" name="main_tabs">
+      <property name="tabPosition">
+       <enum>QTabWidget::North</enum>
       </property>
-     </widget>
-    </item>
-    <item row="0" column="0">
-     <widget class="QFrame" name="form_frame">
-      <property name="frameShape">
-       <enum>QFrame::StyledPanel</enum>
+      <property name="currentIndex">
+       <number>1</number>
       </property>
-      <layout class="QGridLayout" name="gridLayout_2">
-       <item row="1" column="0">
-        <layout class="QGridLayout" name="gridLayout_3">
-         <item row="0" column="0">
-          <widget class="QLabel" name="osc_ip_label">
-           <property name="text">
-            <string>OSC IP:</string>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="6">
-          <widget class="QLabel" name="port_label">
-           <property name="text">
-            <string>Port:</string>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="9">
-          <widget class="QLabel" name="language_label">
-           <property name="text">
-            <string>Language:</string>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="10">
-          <widget class="QComboBox" name="lang_combobox"/>
-         </item>
-         <item row="0" column="4">
-          <widget class="QLineEdit" name="ip_entry">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="maximumSize">
-            <size>
-             <width>60</width>
-             <height>16777215</height>
-            </size>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="7">
-          <widget class="QLineEdit" name="port_entry">
-           <property name="maximumSize">
-            <size>
-             <width>40</width>
-             <height>16777215</height>
-            </size>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="8">
-          <spacer name="horizontalSpacer">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>41</width>
-             <height>20</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-        </layout>
-       </item>
-       <item row="10" column="0">
-        <layout class="QHBoxLayout" name="row5">
-         <item>
-          <widget class="QPushButton" name="stop_btn">
-           <property name="font">
-            <font>
-             <pointsize>29</pointsize>
-            </font>
-           </property>
-           <property name="styleSheet">
-            <string notr="true">QPushButton {
+      <widget class="QWidget" name="tab_main">
+       <attribute name="title">
+        <string>Main</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="verticalLayout_tab_main">
+        <item>
+         <widget class="QFrame" name="form_frame">
+          <property name="frameShape">
+           <enum>QFrame::StyledPanel</enum>
+          </property>
+          <layout class="QGridLayout" name="gridLayout_2">
+           <item row="1" column="0">
+            <layout class="QGridLayout" name="gridLayout_3">
+             <item row="0" column="0">
+              <widget class="QLabel" name="osc_ip_label">
+               <property name="text">
+                <string>OSC IP:</string>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="6">
+              <widget class="QLabel" name="port_label">
+               <property name="text">
+                <string>Port:</string>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="9">
+              <widget class="QLabel" name="language_label">
+               <property name="text">
+                <string>Language:</string>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="10">
+              <widget class="QComboBox" name="lang_combobox"/>
+             </item>
+             <item row="0" column="4">
+              <widget class="QLineEdit" name="ip_entry">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+               <property name="maximumSize">
+                <size>
+                 <width>60</width>
+                 <height>16777215</height>
+                </size>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="7">
+              <widget class="QLineEdit" name="port_entry">
+               <property name="maximumSize">
+                <size>
+                 <width>40</width>
+                 <height>16777215</height>
+                </size>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="8">
+              <spacer name="horizontalSpacer">
+               <property name="orientation">
+                <enum>Qt::Horizontal</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>41</width>
+                 <height>20</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+            </layout>
+           </item>
+           <item row="10" column="0">
+            <layout class="QHBoxLayout" name="row5">
+             <item>
+              <widget class="QPushButton" name="stop_btn">
+               <property name="font">
+                <font>
+                 <pointsize>29</pointsize>
+                </font>
+               </property>
+               <property name="styleSheet">
+                <string notr="true">QPushButton {
     background-color: #ff0000;
     color: black;
     border: none;
 }
-
 QPushButton:hover {
     background-color: #ff6e6e;
 }
-
 QPushButton:pressed {
     background-color: #610000;
 }
-
 QPushButton:checked {
     background-color: #610000; /* ここを暗い色にする */
     color: black;
     border: 1px solid #333;
 }</string>
-           </property>
-           <property name="text">
-            <string>Stop</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QPushButton" name="start_btn">
-           <property name="font">
-            <font>
-             <pointsize>29</pointsize>
-            </font>
-           </property>
-           <property name="styleSheet">
-            <string notr="true">QPushButton {
+               </property>
+               <property name="text">
+                <string>Stop</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="start_btn">
+               <property name="font">
+                <font>
+                 <pointsize>29</pointsize>
+                </font>
+               </property>
+               <property name="styleSheet">
+                <string notr="true">QPushButton {
     background-color: #32a852;
     color: black;
     border: none;
 }
-
 QPushButton:hover {
     background-color: #85e69f;
 }
-
 QPushButton:pressed {
     background-color: #2a4531;
 }
-
 QPushButton:checked {
     background-color: #2a4531; /* ここを暗い色にする */
     color: black;
     border: 1px solid #333;
 }</string>
-           </property>
-           <property name="text">
-            <string>Start</string>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </item>
-       <item row="2" column="0">
-        <layout class="QHBoxLayout" name="row2">
-         <item>
-          <widget class="QLabel" name="transport_label">
-           <property name="text">
-            <string>Send to:</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QComboBox" name="transport_combobox"/>
-         </item>
-         <item>
-          <widget class="QLabel" name="webhook_label">
-           <property name="text">
-            <string>Discord Webhook:</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QLineEdit" name="webhook_entry"/>
-         </item>
-        </layout>
-       </item>
-       <item row="3" column="0">
-        <layout class="QHBoxLayout" name="row3">
-         <item>
-          <widget class="QLabel" name="join_label">
-           <property name="text">
-            <string>Join URL:</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QLineEdit" name="join_entry"/>
-         </item>
-         <item>
-          <widget class="QPushButton" name="test_btn">
-           <property name="text">
-            <string>Test Webhook</string>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </item>
-       <item row="9" column="0">
-        <layout class="QHBoxLayout" name="row4">
-         <item>
-          <widget class="QLabel" name="rare_mention_label">
-           <property name="text">
-            <string>Rare Biome Mention:</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QComboBox" name="mention_combobox"/>
-         </item>
-         <item>
-          <widget class="QLabel" name="mention_id_label">
-           <property name="text">
-            <string>User/Role ID:</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QLineEdit" name="mention_id_entry"/>
-         </item>
-        </layout>
-       </item>
-       <item row="4" column="0">
-        <layout class="QGridLayout" name="gridLayout_6">
-         <property name="bottomMargin">
-          <number>0</number>
-         </property>
-         <item row="0" column="0">
-          <widget class="QLabel" name="embed_author_label">
-           <property name="maximumSize">
-            <size>
-             <width>71</width>
-             <height>16777215</height>
-            </size>
-           </property>
-           <property name="font">
-            <font>
-             <pointsize>9</pointsize>
-            </font>
-           </property>
-           <property name="text">
-            <string>Server Name:</string>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="1">
-          <widget class="QLineEdit" name="embed_author_entry"/>
-         </item>
-        </layout>
-       </item>
-       <item row="11" column="0">
-        <layout class="QGridLayout" name="gridLayout_7">
-         <property name="bottomMargin">
-          <number>0</number>
-         </property>
-         <item row="0" column="0">
-          <widget class="QLineEdit" name="stop_hotkey">
-           <property name="styleSheet">
-            <string notr="true">QLineEdit::placeholder {
+               </property>
+               <property name="text">
+                <string>Start</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+           <item row="2" column="0">
+            <layout class="QHBoxLayout" name="row2">
+             <item>
+              <widget class="QLabel" name="transport_label">
+               <property name="text">
+                <string>Send to:</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QComboBox" name="transport_combobox"/>
+             </item>
+             <item>
+              <widget class="QLabel" name="webhook_label">
+               <property name="text">
+                <string>Discord Webhook:</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLineEdit" name="webhook_entry"/>
+             </item>
+            </layout>
+           </item>
+           <item row="3" column="0">
+            <layout class="QHBoxLayout" name="row3">
+             <item>
+              <widget class="QLabel" name="join_label">
+               <property name="text">
+                <string>Join URL:</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLineEdit" name="join_entry"/>
+             </item>
+             <item>
+              <widget class="QPushButton" name="test_btn">
+               <property name="text">
+                <string>Test Webhook</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+           <item row="9" column="0">
+            <layout class="QHBoxLayout" name="row4">
+             <item>
+              <widget class="QLabel" name="rare_mention_label">
+               <property name="text">
+                <string>Rare Biome Mention:</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QComboBox" name="mention_combobox"/>
+             </item>
+             <item>
+              <widget class="QLabel" name="mention_id_label">
+               <property name="text">
+                <string>User/Role ID:</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLineEdit" name="mention_id_entry"/>
+             </item>
+            </layout>
+           </item>
+           <item row="4" column="0">
+            <layout class="QGridLayout" name="gridLayout_6">
+             <property name="bottomMargin">
+              <number>0</number>
+             </property>
+             <item row="0" column="0">
+              <widget class="QLabel" name="embed_author_label">
+               <property name="maximumSize">
+                <size>
+                 <width>71</width>
+                 <height>16777215</height>
+                </size>
+               </property>
+               <property name="font">
+                <font>
+                 <pointsize>9</pointsize>
+                </font>
+               </property>
+               <property name="text">
+                <string>Server Name:</string>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="1">
+              <widget class="QLineEdit" name="embed_author_entry"/>
+             </item>
+            </layout>
+           </item>
+           <item row="11" column="0">
+            <layout class="QGridLayout" name="gridLayout_7">
+             <property name="bottomMargin">
+              <number>0</number>
+             </property>
+             <item row="0" column="0">
+              <widget class="QLineEdit" name="stop_hotkey">
+               <property name="styleSheet">
+                <string notr="true">QLineEdit::placeholder {
     color: #aaaaaa;  /* 薄いグレーに設定 */
     font-style: italic; /* 斜体にする */
 }</string>
-           </property>
-           <property name="placeholderText">
-            <string>hotkey edit here</string>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="1">
-          <widget class="QLineEdit" name="start_hotkey">
-           <property name="styleSheet">
-            <string notr="true">QLineEdit::placeholder {
+               </property>
+               <property name="placeholderText">
+                <string>hotkey edit here</string>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="1">
+              <widget class="QLineEdit" name="start_hotkey">
+               <property name="styleSheet">
+                <string notr="true">QLineEdit::placeholder {
     color: #aaaaaa;  /* 薄いグレーに設定 */
     font-style: italic; /* 斜体にする */
 }</string>
-           </property>
-           <property name="placeholderText">
-            <string>hotkey edit here</string>
-           </property>
+               </property>
+               <property name="placeholderText">
+                <string>hotkey edit here</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="status_h">
+          <item>
+           <widget class="QLabel" name="aura_label">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="sizeIncrement">
+             <size>
+              <width>0</width>
+              <height>0</height>
+             </size>
+            </property>
+            <property name="text">
+             <string>Aura:      </string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="current_aura_val">
+            <property name="font">
+             <font>
+              <pointsize>19</pointsize>
+             </font>
+            </property>
+            <property name="text">
+             <string>Unknown</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <widget class="QLabel" name="status_label">
+          <property name="text">
+           <string>Stopped</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <layout class="QGridLayout" name="gridLayout_5">
+          <property name="rightMargin">
+           <number>0</number>
+          </property>
+          <property name="bottomMargin">
+           <number>0</number>
+          </property>
+          <item row="0" column="0">
+           <widget class="QLabel" name="biome_label">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>50</width>
+              <height>16777215</height>
+             </size>
+            </property>
+            <property name="text">
+             <string>Biome:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <widget class="QLabel" name="current_biome_val">
+            <property name="font">
+             <font>
+              <pointsize>19</pointsize>
+             </font>
+            </property>
+            <property name="text">
+             <string>Unknown</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <widget class="QTextEdit" name="log_text">
+          <property name="readOnly">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="tab_biomes">
+       <attribute name="title">
+        <string>Biomes</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="verticalLayout_tab_biomes">
+        <item>
+         <widget class="QTabWidget" name="biome_tabwidget">
+          <property name="minimumSize">
+           <size>
+            <width>260</width>
+            <height>0</height>
+           </size>
+          </property>
+          <widget class="QWidget" name="biomes_tab">
+           <attribute name="title">
+            <string/>
+           </attribute>
+           <layout class="QVBoxLayout" name="verticalLayout_biomes">
+            <item>
+             <widget class="QScrollArea" name="biome_scroll">
+              <property name="widgetResizable">
+               <bool>true</bool>
+              </property>
+              <widget class="QWidget" name="biome_scroll_widget">
+               <property name="geometry">
+                <rect>
+                 <x>0</x>
+                 <y>-437</y>
+                 <width>475</width>
+                 <height>828</height>
+                </rect>
+               </property>
+               <layout class="QVBoxLayout" name="biome_scroll_layout">
+                <item>
+                 <widget class="QGroupBox" name="grp_Normal">
+                  <property name="title">
+                   <string>Normal</string>
+                  </property>
+                  <layout class="QHBoxLayout" name="h_Normal">
+                   <item>
+                    <widget class="QCheckBox" name="cb_Normal_screenshot">
+                     <property name="text">
+                      <string>スクショ</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item>
+                    <widget class="QCheckBox" name="cb_Normal_mention">
+                     <property name="text">
+                      <string>メンション</string>
+                     </property>
+                    </widget>
+                   </item>
+                  </layout>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QGroupBox" name="grp_Corruption">
+                  <property name="title">
+                   <string>Corruption</string>
+                  </property>
+                  <layout class="QHBoxLayout" name="h_Corruption">
+                   <item>
+                    <widget class="QCheckBox" name="cb_Corruption_screenshot">
+                     <property name="text">
+                      <string>スクショ</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item>
+                    <widget class="QCheckBox" name="cb_Corruption_mention">
+                     <property name="text">
+                      <string>メンション</string>
+                     </property>
+                    </widget>
+                   </item>
+                  </layout>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QGroupBox" name="grp_Cyberspace">
+                  <property name="title">
+                   <string>Cyberspace</string>
+                  </property>
+                  <layout class="QHBoxLayout" name="h_Cyberspace">
+                   <item>
+                    <widget class="QCheckBox" name="cb_Cyberspace_screenshot">
+                     <property name="enabled">
+                      <bool>true</bool>
+                     </property>
+                     <property name="text">
+                      <string>スクショ</string>
+                     </property>
+                     <property name="checked">
+                      <bool>true</bool>
+                     </property>
+                    </widget>
+                   </item>
+                   <item>
+                    <widget class="QCheckBox" name="cb_Cyberspace_mention">
+                     <property name="text">
+                      <string>メンション</string>
+                     </property>
+                     <property name="checked">
+                      <bool>true</bool>
+                     </property>
+                    </widget>
+                   </item>
+                  </layout>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QGroupBox" name="grp_Dreamspace">
+                  <property name="title">
+                   <string>Dreamspace</string>
+                  </property>
+                  <layout class="QHBoxLayout" name="h_Dreamspace">
+                   <item>
+                    <widget class="QCheckBox" name="cb_Dreamspace_screenshot">
+                     <property name="text">
+                      <string>スクショ</string>
+                     </property>
+                     <property name="checked">
+                      <bool>true</bool>
+                     </property>
+                    </widget>
+                   </item>
+                   <item>
+                    <widget class="QCheckBox" name="cb_Dreamspace_mention">
+                     <property name="text">
+                      <string>メンション</string>
+                     </property>
+                     <property name="checked">
+                      <bool>true</bool>
+                     </property>
+                    </widget>
+                   </item>
+                  </layout>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QGroupBox" name="grp_Glitch">
+                  <property name="title">
+                   <string>Glitch</string>
+                  </property>
+                  <layout class="QHBoxLayout" name="h_Glitch">
+                   <item>
+                    <widget class="QCheckBox" name="cb_Glitch_screenshot">
+                     <property name="text">
+                      <string>スクショ</string>
+                     </property>
+                     <property name="checked">
+                      <bool>true</bool>
+                     </property>
+                    </widget>
+                   </item>
+                   <item>
+                    <widget class="QCheckBox" name="cb_Glitch_mention">
+                     <property name="text">
+                      <string>メンション</string>
+                     </property>
+                     <property name="checked">
+                      <bool>true</bool>
+                     </property>
+                    </widget>
+                   </item>
+                  </layout>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QGroupBox" name="grp_Heaven">
+                  <property name="title">
+                   <string>Heaven</string>
+                  </property>
+                  <layout class="QHBoxLayout" name="h_Heaven">
+                   <item>
+                    <widget class="QCheckBox" name="cb_Heaven_screenshot">
+                     <property name="text">
+                      <string>スクショ</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item>
+                    <widget class="QCheckBox" name="cb_Heaven_mention">
+                     <property name="text">
+                      <string>メンション</string>
+                     </property>
+                    </widget>
+                   </item>
+                  </layout>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QGroupBox" name="grp_Hell">
+                  <property name="title">
+                   <string>Hell</string>
+                  </property>
+                  <layout class="QHBoxLayout" name="h_Hell">
+                   <item>
+                    <widget class="QCheckBox" name="cb_Hell_screenshot">
+                     <property name="text">
+                      <string>スクショ</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item>
+                    <widget class="QCheckBox" name="cb_Hell_mention">
+                     <property name="text">
+                      <string>メンション</string>
+                     </property>
+                    </widget>
+                   </item>
+                  </layout>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QGroupBox" name="grp_Null">
+                  <property name="title">
+                   <string>Null</string>
+                  </property>
+                  <layout class="QHBoxLayout" name="h_Null">
+                   <item>
+                    <widget class="QCheckBox" name="cb_Null_screenshot">
+                     <property name="text">
+                      <string>スクショ</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item>
+                    <widget class="QCheckBox" name="cb_Null_mention">
+                     <property name="text">
+                      <string>メンション</string>
+                     </property>
+                    </widget>
+                   </item>
+                  </layout>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QGroupBox" name="grp_Rainy">
+                  <property name="title">
+                   <string>Rainy</string>
+                  </property>
+                  <layout class="QHBoxLayout" name="h_Rainy">
+                   <item>
+                    <widget class="QCheckBox" name="cb_Rainy_screenshot">
+                     <property name="text">
+                      <string>スクショ</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item>
+                    <widget class="QCheckBox" name="cb_Rainy_mention">
+                     <property name="text">
+                      <string>メンション</string>
+                     </property>
+                    </widget>
+                   </item>
+                  </layout>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QGroupBox" name="grp_Sandstorm">
+                  <property name="title">
+                   <string>Sandstorm</string>
+                  </property>
+                  <layout class="QHBoxLayout" name="h_Sandstorm">
+                   <item>
+                    <widget class="QCheckBox" name="cb_Sandstorm_screenshot">
+                     <property name="text">
+                      <string>スクショ</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item>
+                    <widget class="QCheckBox" name="cb_Sandstorm_mention">
+                     <property name="text">
+                      <string>メンション</string>
+                     </property>
+                    </widget>
+                   </item>
+                  </layout>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QGroupBox" name="grp_Singurality">
+                  <property name="title">
+                   <string>Singurality</string>
+                  </property>
+                  <layout class="QHBoxLayout" name="h_Singurality">
+                   <item>
+                    <widget class="QCheckBox" name="cb_Singurality_screenshot">
+                     <property name="text">
+                      <string>スクショ</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item>
+                    <widget class="QCheckBox" name="cb_Singurality_mention">
+                     <property name="text">
+                      <string>メンション</string>
+                     </property>
+                    </widget>
+                   </item>
+                  </layout>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QGroupBox" name="grp_Snowy">
+                  <property name="title">
+                   <string>Snowy</string>
+                  </property>
+                  <layout class="QHBoxLayout" name="h_Snowy">
+                   <item>
+                    <widget class="QCheckBox" name="cb_Snowy_screenshot">
+                     <property name="text">
+                      <string>スクショ</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item>
+                    <widget class="QCheckBox" name="cb_Snowy_mention">
+                     <property name="text">
+                      <string>メンション</string>
+                     </property>
+                    </widget>
+                   </item>
+                  </layout>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QGroupBox" name="grp_Starfall">
+                  <property name="title">
+                   <string>Starfall</string>
+                  </property>
+                  <layout class="QHBoxLayout" name="h_Starfall">
+                   <item>
+                    <widget class="QCheckBox" name="cb_Starfall_screenshot">
+                     <property name="text">
+                      <string>スクショ</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item>
+                    <widget class="QCheckBox" name="cb_Starfall_mention">
+                     <property name="text">
+                      <string>メンション</string>
+                     </property>
+                    </widget>
+                   </item>
+                  </layout>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QGroupBox" name="grp_Windy">
+                  <property name="title">
+                   <string>Windy</string>
+                  </property>
+                  <layout class="QHBoxLayout" name="h_Windy">
+                   <item>
+                    <widget class="QCheckBox" name="cb_Windy_screenshot">
+                     <property name="text">
+                      <string>スクショ</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item>
+                    <widget class="QCheckBox" name="cb_Windy_mention">
+                     <property name="text">
+                      <string>メンション</string>
+                     </property>
+                    </widget>
+                   </item>
+                  </layout>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QGroupBox" name="grp_Other">
+                  <property name="title">
+                   <string>Other</string>
+                  </property>
+                  <layout class="QHBoxLayout" name="h_Other">
+                   <item>
+                    <widget class="QCheckBox" name="cb_Other_screenshot">
+                     <property name="text">
+                      <string>スクショ</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item>
+                    <widget class="QCheckBox" name="cb_Other_mention">
+                     <property name="text">
+                      <string>メンション</string>
+                     </property>
+                    </widget>
+                   </item>
+                  </layout>
+                 </widget>
+                </item>
+                <item>
+                 <spacer name="verticalSpacer">
+                  <property name="orientation">
+                   <enum>Qt::Vertical</enum>
+                  </property>
+                  <property name="sizeHint" stdset="0">
+                   <size>
+                    <width>20</width>
+                    <height>40</height>
+                   </size>
+                  </property>
+                 </spacer>
+                </item>
+               </layout>
+              </widget>
+             </widget>
+            </item>
+           </layout>
           </widget>
-         </item>
-        </layout>
-       </item>
-      </layout>
+         </widget>
+        </item>
+       </layout>
+      </widget>
      </widget>
-    </item>
-    <item row="21" column="0">
-     <widget class="QLabel" name="status_label">
-      <property name="text">
-       <string>Stopped</string>
-      </property>
-     </widget>
-    </item>
-    <item row="1" column="0">
-     <layout class="QHBoxLayout" name="status_h">
-      <item>
-       <widget class="QLabel" name="aura_label">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="sizeIncrement">
-         <size>
-          <width>0</width>
-          <height>0</height>
-         </size>
-        </property>
-        <property name="text">
-         <string>Aura:      </string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QLabel" name="current_aura_val">
-        <property name="font">
-         <font>
-          <pointsize>19</pointsize>
-         </font>
-        </property>
-        <property name="text">
-         <string>Unknown</string>
-        </property>
-       </widget>
-      </item>
-     </layout>
-    </item>
-    <item row="9" column="0" rowspan="2">
-     <layout class="QGridLayout" name="gridLayout_5">
-      <property name="rightMargin">
-       <number>0</number>
-      </property>
-      <property name="bottomMargin">
-       <number>0</number>
-      </property>
-      <item row="0" column="0">
-       <widget class="QLabel" name="biome_label">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="maximumSize">
-         <size>
-          <width>50</width>
-          <height>16777215</height>
-         </size>
-        </property>
-        <property name="text">
-         <string>Biome:</string>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="1">
-       <widget class="QLabel" name="current_biome_val">
-        <property name="font">
-         <font>
-          <pointsize>19</pointsize>
-         </font>
-        </property>
-        <property name="text">
-         <string>Unknown</string>
-        </property>
-       </widget>
-      </item>
-     </layout>
     </item>
    </layout>
   </widget>

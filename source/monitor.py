@@ -12,9 +12,14 @@ from typing import Optional, Union
 from pythonosc import udp_client
 import pyautogui as pag 
 import win32gui
+import win32ui
 import win32con
 from pathlib import Path
 from PIL import ImageGrab  # マルチモニターキャプチャのためにインポート
+from ctypes import windll
+from PIL import Image, ImageGrab
+import traceback
+
 
 # WindowsのDPIスケーリングによる座標のズレを防ぐため、プロセス単位でDPIアウェアネスを有効化
 try:
@@ -30,7 +35,7 @@ except Exception:
 OSC_IP = "127.0.0.1"
 OSC_PORT = 9000
 ROBLOX_LOG_DIR = Path.home() / "AppData" / "Local" / "Roblox" / "logs"
-TARGET_KEYWORD = "[FLog::Output] [BloxstrapRPC]"
+TARGET_KEYWORD = "[BloxstrapRPC]"
 WINDOWTITLE = "Roblox"
 MESSAGE_FORMAT = "{} : {}"
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -81,7 +86,7 @@ class Monitor:
     コールバックを使用して GUI にメッセージを渡します。
     """
 
-    def __init__(self, osc_ip=OSC_IP, osc_port=OSC_PORT, log_dir=ROBLOX_LOG_DIR, message_callback=None, status_callback=None, transport='osc', webhook_url=None, join_url=None, embed_author=None, thumbnail_url=None, mention_type='none', mention_id=''):
+    def __init__(self, osc_ip=OSC_IP, osc_port=OSC_PORT, log_dir=ROBLOX_LOG_DIR, message_callback=None, status_callback=None, transport='osc', webhook_url=None, join_url=None, embed_author=None, thumbnail_url=None, mention_type='none', mention_id='', biome_options=None):
         self.osc_ip = osc_ip
         self.osc_port = osc_port
         self.log_dir = log_dir
@@ -99,6 +104,24 @@ class Monitor:
         self._last_biome_sent = None
         # ファイルからバイオームメッセージを読み込む（存在する場合）
         self._biome_messages = {}
+
+        # バイオームごとのオプション（キーは正規化された大文字英数字）
+        self.biome_options = {}
+        try:
+            if isinstance(biome_options, dict):
+                for k, v in biome_options.items():
+                    nk = self._normalize_biome_key(k)
+                    try:
+                        self.biome_options[nk] = {
+                            'screenshot': bool(v.get('screenshot', False)),
+                            'mention': bool(v.get('mention', False))
+                        }
+                    except Exception:
+                        # 入力が単純な真偽値かもしれない
+                        self.biome_options[nk] = {'screenshot': bool(v), 'mention': False}
+        except Exception:
+            self.biome_options = {}
+
         try:
             self._load_biome_messages()
         except Exception as e:
@@ -345,12 +368,12 @@ class Monitor:
                 self._send_callback("No Discord webhook URL configured.\n")
                 return
 
-        latest_log = get_latest_log_file(self.log_dir)
-        if not latest_log:
+        current_log = get_latest_log_file(self.log_dir)
+        if not current_log:
             self._send_callback("No log file found.\n")
             return
 
-        self._send_callback(f"Monitor started: {os.path.basename(latest_log)}\n")
+        self._send_callback(f"Monitor started: {os.path.basename(current_log)}\n")
         
         # Discord トランスポートを使用している場合、Discord スタート埋め込みを送信
         if self.transport == 'discord':
@@ -372,9 +395,33 @@ class Monitor:
         last_sent_time = 0
 
         try:
-            with open(latest_log, 'r', encoding='utf-8', errors='ignore') as f:
-                f.seek(0, 2)
-                while not self._stop_event.is_set():
+            f = open(current_log, 'r', encoding='utf-8', errors='ignore')
+            f.seek(0, os.SEEK_END)  # ファイルの末尾に移動して新しい行を待つ              
+
+            while not self._stop_event.is_set():
+
+                    latest = get_latest_log_file(self.log_dir)
+
+                    if latest and latest != current_log:
+                        self._send_callback(
+                            f"Detected new Roblox log:\n"
+                            f"Old: {current_log.name}\n"
+                            f"New: {latest.name}\n"
+                        )
+
+                        try:
+                            f.close()
+                        except Exception:
+                            pass
+
+                        current_log = latest
+
+                        f = open(current_log, "r", encoding="utf-8", errors="ignore")
+                        f.seek(0, os.SEEK_END)
+
+                        self._send_callback(f"Now monitoring {current_log.name}\n")
+                        continue
+
                     line = f.readline()
                     if not line:
                         time.sleep(0.1)
@@ -439,14 +486,50 @@ class Monitor:
                                     except Exception:
                                         pass
                                     
-                                    # これがレアバイオームかどうかをチェックして、メンションとスクリーンショットを準備
+                                    # バイオーム名に対する UI 設定を確認して、スクショ/メンションの可否を決定
                                     mention_str = ''
                                     screenshot_taken = False
-                                    if self._is_rare_biome(data2):
+
+                                    # 優先順: 1) 正規化キーによる完全一致 2) 部分一致 3) 'OTHER' キー
+                                    opt = None
+                                    try:
+                                        key = self._normalize_biome_key(data2)
+                                        opt = self.biome_options.get(key)
+                                        if not opt:
+                                            up = (data2 or '').strip().upper()
+                                            for k_opt, v_opt in self.biome_options.items():
+                                                if k_opt in up or up in k_opt:
+                                                    opt = v_opt
+                                                    break
+                                        if not opt:
+                                            opt = self.biome_options.get('OTHER')
+                                    except Exception:
+                                        opt = None
+
+                                    # opt がある場合はそれに従う。なければ既存のレア判定にフォールバック
+                                    do_mention = False
+                                    do_screenshot = False
+                                    if opt:
+                                        do_screenshot = bool(opt.get('screenshot', False))
+                                        do_mention = bool(opt.get('mention', False))
+                                    else:
+                                        # 互換性のため、もともとの rare 判定に基づく挙動を維持
+                                        do_screenshot = self._is_rare_biome(data2)
+                                        do_mention = self._is_rare_biome(data2)
+
+                                    if do_mention:
                                         mention_str = self._get_mention_string()
+
+                                    if do_screenshot:
                                         wins = pag.getWindowsWithTitle(WINDOWTITLE)
                                         if wins:
                                             win = wins[0]
+                                            if win.isMinimized:
+                                                win.restore()
+
+                                            win.activate()
+                                            time.sleep(0.4)
+
                                             region = (win.left, win.top, win.width, win.height)
                                             self._send_callback(f"DEBUG: Screenshot region = {region}\n")
                                             # スクリーンショットを1回だけ確実に行う
@@ -455,26 +538,21 @@ class Monitor:
                                         else:
                                             self._send_callback("Error: Could not find Roblox window for screenshot.\n")
                                     else:
-                                        self._send_callback(f"Biome '{data2}' is not rare, no mention or screenshot.\n")
-                                        if mention_str:
-                                            try:
-                                                self._send_callback(f"Rare biome '{data2}' detected, adding mention: {mention_str}\n")
-                                            except Exception:
-                                                pass
-                                    
+                                        self._send_callback(f"Biome '{data2}' configured to not take screenshot/mention.\n")
+
                                     embed = {
                                         'title': f"Biome Started - {data2} <t:{int(time.time())}:R>",
                                         'description': f"{start_msg} \n\n**{data1}** equipped." if start_msg else f"**{data1}** equipped.",
                                         'color': self._biome_color(data2),
                                         'timestamp': datetime.datetime.utcnow().isoformat() + 'Z',
                                         'footer': {'text': 'vrcsol'},
-                                        'image': {'url': 'attachment://screenshot.png'} if (self._is_rare_biome(data2) and screenshot_taken) else None
+                                        'image': {'url': 'attachment://screenshot.png'} if (screenshot_taken) else None
                                     }
 
                                     # 送信するファイルを蓄積するリストを用意（上書き問題の根本解決）
                                     local_files = []
 
-                                    if self._is_rare_biome(data2) and screenshot_taken:
+                                    if screenshot_taken:
                                         if os.path.exists(SCREENSHOT_DIR):
                                             self._send_callback(f"DEBUG: Screenshot exists at {SCREENSHOT_DIR}, size: {os.path.getsize(SCREENSHOT_DIR)} bytes\n")
                                             local_files.append(SCREENSHOT_DIR)
@@ -535,7 +613,28 @@ class Monitor:
                                         self._send_callback(f"Resent: {message}\n")
                                         last_sent_time = now
                                     else:
-                                        # 埋め込みを再送信
+                                        # 再送時もバイオームごとの設定を尊重する
+                                        opt = None
+                                        try:
+                                            key = self._normalize_biome_key(data2)
+                                            opt = self.biome_options.get(key)
+                                            if not opt:
+                                                up = (data2 or '').strip().upper()
+                                                for k_opt, v_opt in self.biome_options.items():
+                                                    if k_opt in up or up in k_opt:
+                                                        opt = v_opt
+                                                        break
+                                            if not opt:
+                                                opt = self.biome_options.get('OTHER')
+                                        except Exception:
+                                            opt = None
+
+                                        do_mention = bool(opt.get('mention', False)) if opt else self._is_rare_biome(data2)
+                                        do_screenshot = bool(opt.get('screenshot', False)) if opt else self._is_rare_biome(data2)
+
+                                        mention_str = self._get_mention_string() if do_mention else ''
+
+                                        # 再送の埋め込みを作成
                                         embed = {
                                             'title': f"Biome Started - {data2}",
                                             'description': start_msg or '',
@@ -543,6 +642,13 @@ class Monitor:
                                             'timestamp': datetime.datetime.utcnow().isoformat() + 'Z',
                                             'footer': {'text': 'vrcsol'}
                                         }
+
+                                        # スクリーンショットの存在を確認して添付する
+                                        local_files = []
+                                        if do_screenshot and os.path.exists(SCREENSHOT_DIR):
+                                            local_files.append(SCREENSHOT_DIR)
+                                            embed['image'] = {'url': 'attachment://screenshot.png'}
+
                                         # 利用可能な場合は参加 URL を追加
                                         if getattr(self, 'join_url', None):
                                             try:
@@ -567,9 +673,15 @@ class Monitor:
                                             icon_path = self._find_biome_icon(data2)
                                             if icon_path:
                                                 embed['thumbnail'] = {'url': f'attachment://{os.path.basename(icon_path)}'}
-                                                embed['_local_file_path'] = icon_path
+                                                local_files.append(icon_path)
                                         except Exception:
                                             pass
+
+                                        if local_files:
+                                            # 単一ファイルキー互換のためには最初のファイルもセット
+                                            if len(local_files) == 1:
+                                                embed['_local_file_path'] = local_files[0]
+                                            embed['_local_file_paths'] = local_files
 
                                         components = None
                                         if getattr(self, 'join_url', None):
@@ -582,7 +694,8 @@ class Monitor:
                                                     'url': self.join_url
                                                 }]
                                             }]
-                                        ok = self._post_discord(embed=embed, components=components)
+
+                                        ok = self._post_discord(content=mention_str if mention_str else None, embed=embed, components=components)
                                         if ok:
                                             self._send_callback(f"Resent webhook: {message}\n")
                                             last_sent_time = now
@@ -594,6 +707,11 @@ class Monitor:
                                     self._send_callback(f"Send error: {e}\n")
         except Exception as e:
             self._send_callback(f"Monitoring error: {e}\n")
+        finally:
+            try:
+                f.close()
+            except Exception:
+                pass
 
         # Discord トランスポートを使用している場合、Discord ストップ埋め込みを送信
         if self.transport == 'discord':
@@ -662,41 +780,59 @@ class Monitor:
         return None
 
     def _focus_and_screenshot(self, region):
-        """ウィンドウを確実にアクティブにしてマルチモニター対応のスクリーンショットを撮るための改善版関数"""
-        max_retries = 3
-        for attempt in range(max_retries):
-            try:
-                hwnd = win32gui.FindWindow(None, WINDOWTITLE)
-                if not hwnd or not win32gui.IsWindow(hwnd):
-                    self._send_callback(f"Attempt {attempt+1}: Window not found.\n")
-                    time.sleep(1)
-                    continue
-                
-                if win32gui.IsIconic(hwnd):
-                    win32gui.ShowWindow(hwnd, win32con.SW_RESTORE)
-                win32gui.BringWindowToTop(hwnd)
-                win32gui.SetActiveWindow(hwnd)
-                
-                time.sleep(0.5)
-                
-                # マルチモニターとサブモニター（マイナス座標系）に完全対応したImageGrabを使用
-                left, top, width, height = region
-                bbox = (int(left), int(top), int(left + width), int(top + height))
-                
-                # キャプチャ用ディレクトリの存在確認と作成
-                os.makedirs(os.path.dirname(SCREENSHOT_DIR), exist_ok=True)
-                
-                # all_screens=True により、サブモニターにあるウィンドウを正しく等倍座標でキャプチャ
-                im = ImageGrab.grab(bbox=bbox, all_screens=True)
-                im.save(SCREENSHOT_DIR)
-                
-                self._send_callback("Screenshot captured successfully.\n")
-                return True
-            except Exception as e:
-                self._send_callback(f"Attempt {attempt+1} failed: {e}\n")
-                time.sleep(1)
-        self._send_callback("Failed to capture screenshot after retries.\n")
-        return False
+        try:
+            hwnd = win32gui.FindWindow(None, WINDOWTITLE)
+            if not hwnd:
+                self._send_callback("Roblox window not found.\n")
+                return False
+
+            left, top, right, bottom = win32gui.GetWindowRect(hwnd)
+            width = right - left
+            height = bottom - top
+
+            hwndDC = win32gui.GetWindowDC(hwnd)
+            mfcDC = win32ui.CreateDCFromHandle(hwndDC)
+            saveDC = mfcDC.CreateCompatibleDC()
+
+            saveBitmap = win32ui.CreateBitmap()
+            saveBitmap.CreateCompatibleBitmap(mfcDC, width, height)
+
+            saveDC.SelectObject(saveBitmap)
+
+            # PW_RENDERFULLCONTENT = 2
+            result = windll.user32.PrintWindow(hwnd, saveDC.GetSafeHdc(), 2)
+
+            if result != 1:
+                self._send_callback("PrintWindow failed.\n")
+                return False
+
+            bmpinfo = saveBitmap.GetInfo()
+            bmpstr = saveBitmap.GetBitmapBits(True)
+
+            img = Image.frombuffer(
+                "RGB",
+                (bmpinfo["bmWidth"], bmpinfo["bmHeight"]),
+                bmpstr,
+                "raw",
+                "BGRX",
+                0,
+                1,
+            )
+
+            os.makedirs(os.path.dirname(SCREENSHOT_DIR), exist_ok=True)
+            img.save(SCREENSHOT_DIR)
+
+            win32gui.DeleteObject(saveBitmap.GetHandle())
+            saveDC.DeleteDC()
+            mfcDC.DeleteDC()
+            win32gui.ReleaseDC(hwnd, hwndDC)
+
+            self._send_callback("Screenshot captured using PrintWindow.\n")
+            return True
+
+        except Exception:
+            self._send_callback(traceback.format_exc())
+            return False
 
     def _biome_color(self, biome_name: str):
         try:
