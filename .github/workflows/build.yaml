@@ -1,0 +1,60 @@
+name: Build EXE
+
+on:
+  push:
+    branches: [ "main" ]
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch: 
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    permissions:
+      contents: write
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pyinstaller
+        if (Test-Path requirements.txt) { pip install -r requirements.txt }
+
+    - name: Build with PyInstaller
+      working-directory: ./source
+      run: |
+
+        if (-not (Test-Path "biome screenshot")) { New-Item -ItemType Directory -Path "biome screenshot" }
+      
+        pyinstaller --onefile --windowed --icon="./icon.ico" `
+        --add-data "./icon.ico;." `
+        --add-data "biome icons;biome icons" `
+        --add-data "biome screenshot;biome screenshot" `
+        --add-data "settings.json;." `
+        --add-data "biome message.txt;." `
+        --add-data "main.ui;." `
+        --name "VRCSol" gui.py
+        
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: VRCSol-build
+        path: source/dist/*.exe
+
+    - name: Create GitHub Release
+      if: startsWith(github.ref, 'refs/tags/')
+      uses: softprops/action-gh-release@v2
+      with:
+        files: source/dist/VRCSol.exe
+        generate_release_notes: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
