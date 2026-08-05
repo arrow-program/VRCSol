@@ -81,7 +81,7 @@ class Monitor:
     コールバックを使用して GUI にメッセージを渡します。
     """
 
-    def __init__(self, osc_ip=OSC_IP, osc_port=OSC_PORT, log_dir=ROBLOX_LOG_DIR, message_callback=None, status_callback=None, transport='osc', webhook_url=None, join_url=None, embed_author=None, thumbnail_url=None, mention_type='none', mention_id=''):
+    def __init__(self, osc_ip=OSC_IP, osc_port=OSC_PORT, log_dir=ROBLOX_LOG_DIR, message_callback=None, status_callback=None, transport='osc', webhook_url=None, join_url=None, embed_author=None, thumbnail_url=None, mention_type='none', mention_id='', biome_options=None):
         self.osc_ip = osc_ip
         self.osc_port = osc_port
         self.log_dir = log_dir
@@ -99,6 +99,24 @@ class Monitor:
         self._last_biome_sent = None
         # ファイルからバイオームメッセージを読み込む（存在する場合）
         self._biome_messages = {}
+
+        # バイオームごとのオプション（キーは正規化された大文字英数字）
+        self.biome_options = {}
+        try:
+            if isinstance(biome_options, dict):
+                for k, v in biome_options.items():
+                    nk = self._normalize_biome_key(k)
+                    try:
+                        self.biome_options[nk] = {
+                            'screenshot': bool(v.get('screenshot', False)),
+                            'mention': bool(v.get('mention', False))
+                        }
+                    except Exception:
+                        # 入力が単純な真偽値かもしれない
+                        self.biome_options[nk] = {'screenshot': bool(v), 'mention': False}
+        except Exception:
+            self.biome_options = {}
+
         try:
             self._load_biome_messages()
         except Exception as e:
@@ -463,11 +481,41 @@ class Monitor:
                                     except Exception:
                                         pass
                                     
-                                    # これがレアバイオームかどうかをチェックして、メンションとスクリーンショットを準備
+                                    # バイオーム名に対する UI 設定を確認して、スクショ/メンションの可否を決定
                                     mention_str = ''
                                     screenshot_taken = False
-                                    if self._is_rare_biome(data2):
+
+                                    # 優先順: 1) 正規化キーによる完全一致 2) 部分一致 3) 'OTHER' キー
+                                    opt = None
+                                    try:
+                                        key = self._normalize_biome_key(data2)
+                                        opt = self.biome_options.get(key)
+                                        if not opt:
+                                            up = (data2 or '').strip().upper()
+                                            for k_opt, v_opt in self.biome_options.items():
+                                                if k_opt in up or up in k_opt:
+                                                    opt = v_opt
+                                                    break
+                                        if not opt:
+                                            opt = self.biome_options.get('OTHER')
+                                    except Exception:
+                                        opt = None
+
+                                    # opt がある場合はそれに従う。なければ既存のレア判定にフォールバック
+                                    do_mention = False
+                                    do_screenshot = False
+                                    if opt:
+                                        do_screenshot = bool(opt.get('screenshot', False))
+                                        do_mention = bool(opt.get('mention', False))
+                                    else:
+                                        # 互換性のため、もともとの rare 判定に基づく挙動を維持
+                                        do_screenshot = self._is_rare_biome(data2)
+                                        do_mention = self._is_rare_biome(data2)
+
+                                    if do_mention:
                                         mention_str = self._get_mention_string()
+
+                                    if do_screenshot:
                                         wins = pag.getWindowsWithTitle(WINDOWTITLE)
                                         if wins:
                                             win = wins[0]
@@ -479,26 +527,21 @@ class Monitor:
                                         else:
                                             self._send_callback("Error: Could not find Roblox window for screenshot.\n")
                                     else:
-                                        self._send_callback(f"Biome '{data2}' is not rare, no mention or screenshot.\n")
-                                        if mention_str:
-                                            try:
-                                                self._send_callback(f"Rare biome '{data2}' detected, adding mention: {mention_str}\n")
-                                            except Exception:
-                                                pass
-                                    
+                                        self._send_callback(f"Biome '{data2}' configured to not take screenshot/mention.\n")
+
                                     embed = {
                                         'title': f"Biome Started - {data2} <t:{int(time.time())}:R>",
                                         'description': f"{start_msg} \n\n**{data1}** equipped." if start_msg else f"**{data1}** equipped.",
                                         'color': self._biome_color(data2),
                                         'timestamp': datetime.datetime.utcnow().isoformat() + 'Z',
                                         'footer': {'text': 'vrcsol'},
-                                        'image': {'url': 'attachment://screenshot.png'} if (self._is_rare_biome(data2) and screenshot_taken) else None
+                                        'image': {'url': 'attachment://screenshot.png'} if (screenshot_taken) else None
                                     }
 
                                     # 送信するファイルを蓄積するリストを用意（上書き問題の根本解決）
                                     local_files = []
 
-                                    if self._is_rare_biome(data2) and screenshot_taken:
+                                    if screenshot_taken:
                                         if os.path.exists(SCREENSHOT_DIR):
                                             self._send_callback(f"DEBUG: Screenshot exists at {SCREENSHOT_DIR}, size: {os.path.getsize(SCREENSHOT_DIR)} bytes\n")
                                             local_files.append(SCREENSHOT_DIR)
@@ -559,7 +602,28 @@ class Monitor:
                                         self._send_callback(f"Resent: {message}\n")
                                         last_sent_time = now
                                     else:
-                                        # 埋め込みを再送信
+                                        # 再送時もバイオームごとの設定を尊重する
+                                        opt = None
+                                        try:
+                                            key = self._normalize_biome_key(data2)
+                                            opt = self.biome_options.get(key)
+                                            if not opt:
+                                                up = (data2 or '').strip().upper()
+                                                for k_opt, v_opt in self.biome_options.items():
+                                                    if k_opt in up or up in k_opt:
+                                                        opt = v_opt
+                                                        break
+                                            if not opt:
+                                                opt = self.biome_options.get('OTHER')
+                                        except Exception:
+                                            opt = None
+
+                                        do_mention = bool(opt.get('mention', False)) if opt else self._is_rare_biome(data2)
+                                        do_screenshot = bool(opt.get('screenshot', False)) if opt else self._is_rare_biome(data2)
+
+                                        mention_str = self._get_mention_string() if do_mention else ''
+
+                                        # 再送の埋め込みを作成
                                         embed = {
                                             'title': f"Biome Started - {data2}",
                                             'description': start_msg or '',
@@ -567,6 +631,13 @@ class Monitor:
                                             'timestamp': datetime.datetime.utcnow().isoformat() + 'Z',
                                             'footer': {'text': 'vrcsol'}
                                         }
+
+                                        # スクリーンショットの存在を確認して添付する
+                                        local_files = []
+                                        if do_screenshot and os.path.exists(SCREENSHOT_DIR):
+                                            local_files.append(SCREENSHOT_DIR)
+                                            embed['image'] = {'url': 'attachment://screenshot.png'}
+
                                         # 利用可能な場合は参加 URL を追加
                                         if getattr(self, 'join_url', None):
                                             try:
@@ -591,9 +662,15 @@ class Monitor:
                                             icon_path = self._find_biome_icon(data2)
                                             if icon_path:
                                                 embed['thumbnail'] = {'url': f'attachment://{os.path.basename(icon_path)}'}
-                                                embed['_local_file_path'] = icon_path
+                                                local_files.append(icon_path)
                                         except Exception:
                                             pass
+
+                                        if local_files:
+                                            # 単一ファイルキー互換のためには最初のファイルもセット
+                                            if len(local_files) == 1:
+                                                embed['_local_file_path'] = local_files[0]
+                                            embed['_local_file_paths'] = local_files
 
                                         components = None
                                         if getattr(self, 'join_url', None):
@@ -606,7 +683,8 @@ class Monitor:
                                                     'url': self.join_url
                                                 }]
                                             }]
-                                        ok = self._post_discord(embed=embed, components=components)
+
+                                        ok = self._post_discord(content=mention_str if mention_str else None, embed=embed, components=components)
                                         if ok:
                                             self._send_callback(f"Resent webhook: {message}\n")
                                             last_sent_time = now
