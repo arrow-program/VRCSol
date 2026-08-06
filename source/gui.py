@@ -1,7 +1,8 @@
 import sys
 import os
 import json
-from PySide6.QtWidgets import QApplication, QMessageBox, QLineEdit
+import re
+from PySide6.QtWidgets import QApplication, QMessageBox, QLineEdit, QTabWidget, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QCheckBox, QGroupBox, QScrollArea
 from PySide6.QtCore import QFile, Slot, QObject, Signal, QEvent, Qt
 from PySide6.QtUiTools import QUiLoader
 from PySide6.QtGui import QIcon
@@ -75,6 +76,8 @@ class App(QObject): # QMainWindow から QObject に変更
         config = self._load_settings()
         self.lang = config.get('language', 'ja')
         self.transport = config.get('transport', 'osc')
+        # バイオームごとのオプション（キーは正規化済み）
+        self.biome_options = config.get('biome_options', {})
         
         # コンボボックスの初期化
         self.ui.lang_combobox.addItems([LANG_NAMES['ja'], LANG_NAMES['en']])
@@ -131,6 +134,9 @@ class App(QObject): # QMainWindow から QObject に変更
         self.update_hotkeys()
 
         self.ui.installEventFilter(self)
+
+        # --- Biome options tab (programmatically added) ---
+        self._create_biome_options_tab()
 
     def eventFilter(self, obj, event):
         """keyPressEventの代わりにeventFilterを使ってキー入力を捕捉する"""
@@ -194,6 +200,13 @@ class App(QObject): # QMainWindow から QObject に変更
             'start_hotkey': self.ui.start_hotkey.text(),
             'stop_hotkey': self.ui.stop_hotkey.text()
         }
+
+        # バイオームごとのオプションも保存
+        try:
+            config['biome_options'] = self._gather_biome_options()
+        except Exception:
+            config['biome_options'] = getattr(self, 'biome_options', {}) or {}
+
         try:
             with open(USER_SETTINGS_FILE, 'w', encoding='utf-8') as f:
                 json.dump(config, f, indent=4, ensure_ascii=False)
@@ -210,6 +223,109 @@ class App(QObject): # QMainWindow から QObject に変更
         if key_text in ['f1', 'f2', 'f3', 'f4', 'f5', 'f6', 'f7', 'f8', 'f9', 'f10', 'f11', 'f12']:
             return f"<{key_text}>"
         return key_text
+
+    # ----------------- Biome options helpers -----------------
+    def _normalize_biome_key(self, name: str) -> str:
+        try:
+            return re.sub(r'[^A-Za-z0-9]', '', (name or '').strip()).upper()
+        except Exception:
+            return (name or '').strip().upper()
+
+    def _gather_biome_options(self) -> dict:
+        """UIのチェックボックス状態から保存用辞書を作成（キーは正規化済み）"""
+        opts = {}
+        try:
+            if getattr(self, 'biome_checkboxes', None):
+                for key, (cb_screenshot, cb_mention) in self.biome_checkboxes.items():
+                    opts[key] = {
+                        'screenshot': bool(cb_screenshot.isChecked()),
+                        'mention': bool(cb_mention.isChecked())
+                    }
+        except Exception:
+            pass
+        return opts
+
+    def _on_biome_checkbox_changed(self, _=None):
+        # チェックボックスが変更されたら設定を即時保存
+        try:
+            self._save_settings()
+        except Exception:
+            pass
+
+    def _create_biome_options_tab(self):
+        """既存UIに新しいタブを追加して、指定されたバイオームごとのスクショ/メンションチェックを作成する"""
+        try:
+            # ビオーム一覧（ユーザー指定の順序で）
+            biomes = [
+                'Normal','Corruption','Cyberspace','Dreamspace','Glitch','Heaven','Hell','Null',
+                'Rainy','Sandstorm','Singurality','Snowy','Starfall','Windy','Other'
+            ]
+
+            # タブウィジェットを作成して main_widget のレイアウトに追加
+            tabw = QTabWidget(self.ui.main_widget)
+            tabw.setMinimumWidth(260)
+            tabw.setMaximumWidth(260)
+
+            biome_tab = QWidget()
+            vbox = QVBoxLayout()
+            biome_tab.setLayout(vbox)
+
+            # スクロール可能にして多数のチェックボックスにも対応
+            scroll = QScrollArea()
+            scroll.setWidgetResizable(True)
+            inner = QWidget()
+            inner_layout = QVBoxLayout()
+            inner.setLayout(inner_layout)
+
+            self.biome_checkboxes = {}
+            for b in biomes:
+                grp = QGroupBox(b)
+                h = QHBoxLayout()
+                lbl = QLabel(b)
+                cb_s = QCheckBox('スクショ')
+                cb_m = QCheckBox('メンション')
+
+                # 既存の設定があれば反映
+                nk = self._normalize_biome_key(b)
+                saved = self.biome_options.get(nk, {}) if getattr(self, 'biome_options', None) else {}
+                if saved:
+                    try:
+                        cb_s.setChecked(bool(saved.get('screenshot', False)))
+                        cb_m.setChecked(bool(saved.get('mention', False)))
+                    except Exception:
+                        pass
+
+                # 変更時に保存
+                cb_s.stateChanged.connect(lambda _state, k=nk: self._on_biome_checkbox_changed())
+                cb_m.stateChanged.connect(lambda _state, k=nk: self._on_biome_checkbox_changed())
+
+                h.addWidget(cb_s)
+                h.addWidget(cb_m)
+                grp.setLayout(h)
+                inner_layout.addWidget(grp)
+
+                self.biome_checkboxes[nk] = (cb_s, cb_m)
+
+            inner_layout.addStretch(1)
+            scroll.setWidget(inner)
+            vbox.addWidget(scroll)
+
+            tabw.addTab(biome_tab, 'Biomes')
+
+            # レイアウトの右側に追加（既存のグリッドの幅に応じて適切な位置を割り当て）
+            try:
+                layout = self.ui.main_widget.layout()
+                # place at row 0, column 11 spanning many rows so it visually appears to the right
+                layout.addWidget(tabw, 0, 11, 24, 1)
+                self.ui.biome_tabwidget = tabw
+            except Exception:
+                # 失敗してもアプリは動くようにする
+                pass
+        except Exception as e:
+            try:
+                self.ui.log_text.append(f"[GUI] Failed to create biome tab: {e}")
+            except Exception:
+                pass
 
     @Slot()
     def update_hotkeys(self):
@@ -292,6 +408,7 @@ class App(QObject): # QMainWindow から QObject に変更
             embed_author=self.ui.embed_author_entry.text(),
             mention_type=m_map.get(self.ui.mention_combobox.currentText(), 'none'),
             mention_id=self.ui.mention_id_entry.text(),
+            biome_options=self._gather_biome_options(),
             message_callback=lambda text: self.signals.log_received.emit(text),
             status_callback=lambda d1, d2: self.signals.status_received.emit(d1, d2)
         )
