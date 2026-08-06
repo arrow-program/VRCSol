@@ -1,7 +1,8 @@
 import sys
 import os
 import json
-from PySide6.QtWidgets import QApplication, QMessageBox, QLineEdit
+import re
+from PySide6.QtWidgets import QApplication, QMessageBox, QLineEdit, QTabWidget, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QCheckBox, QGroupBox, QScrollArea
 from PySide6.QtCore import QFile, Slot, QObject, Signal, QEvent, Qt
 from PySide6.QtUiTools import QUiLoader
 from PySide6.QtGui import QIcon
@@ -75,6 +76,8 @@ class App(QObject): # QMainWindow から QObject に変更
         config = self._load_settings()
         self.lang = config.get('language', 'ja')
         self.transport = config.get('transport', 'osc')
+        # バイオームごとのオプション（キーは正規化済み）
+        self.biome_options = config.get('biome_options', {})
         
         # コンボボックスの初期化
         self.ui.lang_combobox.addItems([LANG_NAMES['ja'], LANG_NAMES['en']])
@@ -131,6 +134,9 @@ class App(QObject): # QMainWindow から QObject に変更
         self.update_hotkeys()
 
         self.ui.installEventFilter(self)
+
+        # Biome options are defined in the UI file; wire them up instead of creating dynamically
+        self._wire_biome_ui()
 
     def eventFilter(self, obj, event):
         """keyPressEventの代わりにeventFilterを使ってキー入力を捕捉する"""
@@ -194,6 +200,13 @@ class App(QObject): # QMainWindow から QObject に変更
             'start_hotkey': self.ui.start_hotkey.text(),
             'stop_hotkey': self.ui.stop_hotkey.text()
         }
+
+        # バイオームごとのオプションも保存
+        try:
+            config['biome_options'] = self._gather_biome_options()
+        except Exception:
+            config['biome_options'] = getattr(self, 'biome_options', {}) or {}
+
         try:
             with open(USER_SETTINGS_FILE, 'w', encoding='utf-8') as f:
                 json.dump(config, f, indent=4, ensure_ascii=False)
@@ -210,6 +223,136 @@ class App(QObject): # QMainWindow から QObject に変更
         if key_text in ['f1', 'f2', 'f3', 'f4', 'f5', 'f6', 'f7', 'f8', 'f9', 'f10', 'f11', 'f12']:
             return f"<{key_text}>"
         return key_text
+
+    # ----------------- Biome options helpers -----------------
+    def _normalize_biome_key(self, name: str) -> str:
+        try:
+            return re.sub(r'[^A-Za-z0-9]', '', (name or '').strip()).upper()
+        except Exception:
+            return (name or '').strip().upper()
+
+    def _wire_biome_ui(self):
+        """Wire up checkboxes from the .ui to internal structures and connect signals for runtime updates.
+        The main.ui defines checkboxes with names like cb_<Biome>_screenshot and cb_<Biome>_mention.
+        This method collects them into self.biome_checkboxes for backward-compatible access and hooks change signals.
+        """
+        try:
+            self.biome_checkboxes = {}
+            for attr in dir(self.ui):
+                if not attr.startswith('cb_'):
+                    continue
+                try:
+                    w = getattr(self.ui, attr)
+                except Exception:
+                    continue
+                if not hasattr(w, 'isChecked'):
+                    continue
+                # cb_<Biome>_screenshot or cb_<Biome>_mention
+                parts = attr.split('_')
+                if len(parts) < 3:
+                    continue
+                biome_key = '_'.join(parts[1:-1])
+                nk = self._normalize_biome_key(biome_key)
+                entry = self.biome_checkboxes.setdefault(nk, [None, None])
+                kind = parts[-1].lower()
+                if 'screenshot' in kind or 'screen' in kind or 'shot' in kind:
+                    entry[0] = w
+                elif 'mention' in kind:
+                    entry[1] = w
+                # connect signal to a shared handler
+                try:
+                    w.stateChanged.connect(self._on_biome_checkbox_changed)
+                except Exception:
+                    pass
+
+            # Reflect saved options into UI
+            try:
+                if getattr(self, 'biome_options', None):
+                    for k, (cb_s, cb_m) in self.biome_checkboxes.items():
+                        saved = self.biome_options.get(k, {})
+                        if cb_s and saved:
+                            try:
+                                cb_s.setChecked(bool(saved.get('screenshot', False)))
+                            except Exception:
+                                pass
+                        if cb_m and saved:
+                            try:
+                                cb_m.setChecked(bool(saved.get('mention', False)))
+                            except Exception:
+                                pass
+            except Exception:
+                pass
+        except Exception:
+            pass
+
+    def _gather_biome_options(self) -> dict:
+        """Read biome checkbox widgets (from the .ui) and return normalized options dict.
+        This reads checkboxes that follow the naming convention: cb_<NormalizedName>_screenshot / cb_<NormalizedName>_mention
+        """
+        opts = {}
+        try:
+            # If we have programmatic map (back-compat), use it first
+            if getattr(self, 'biome_checkboxes', None):
+                for key, (cb_screenshot, cb_mention) in self.biome_checkboxes.items():
+                    opts[key] = {
+                        'screenshot': bool(cb_screenshot.isChecked()),
+                        'mention': bool(cb_mention.isChecked())
+                    }
+                return opts
+
+            # Otherwise, inspect expected checkbox names from the UI
+            # Collect all widget names in the UI that start with 'cb_'
+            for name in dir(self.ui):
+                if not name.startswith('cb_'):
+                    continue
+                try:
+                    widget = getattr(self.ui, name)
+                except Exception:
+                    continue
+                if not hasattr(widget, 'isChecked'):
+                    continue
+                # name format: cb_<Biome>_screenshot or cb_<Biome>_mention
+                parts = name.split('_')
+                if len(parts) < 3:
+                    continue
+                _, biome_key, kind = parts[0], '_'.join(parts[1:-1]), parts[-1]
+                nk = self._normalize_biome_key(biome_key)
+                entry = opts.setdefault(nk, {'screenshot': False, 'mention': False})
+                if kind.lower().startswith('screenshot') or kind.lower().startswith('shot') or 'screen' in kind.lower():
+                    entry['screenshot'] = bool(widget.isChecked())
+                elif kind.lower().startswith('mention') or 'mention' in kind.lower():
+                    entry['mention'] = bool(widget.isChecked())
+        except Exception:
+            pass
+        return opts
+
+    def _on_biome_checkbox_changed(self, _=None):
+        # チェックボックスが変更されたら設定を保存し、稼働中の Monitor があれば設定を反映する
+        try:
+            self._save_settings()
+        except Exception:
+            pass
+
+        try:
+            # runtime update: push options to running monitor if present
+            if getattr(self, 'monitor', None):
+                try:
+                    self.monitor.biome_options = self._gather_biome_options()
+                    # If Monitor exposes a setter or method to apply options, call it (best-effort)
+                    if hasattr(self.monitor, 'apply_biome_options'):
+                        try:
+                            self.monitor.apply_biome_options(self.monitor.biome_options)
+                        except Exception:
+                            pass
+                except Exception:
+                    pass
+        except Exception:
+            pass
+
+    def _create_biome_options_tab(self):
+        """Removed: creation moved to the .ui file. This placeholder kept for backward compatibility; do not call."""
+        # Intentionally left blank — UI is defined in main.ui now.
+        return
 
     @Slot()
     def update_hotkeys(self):
@@ -292,6 +435,7 @@ class App(QObject): # QMainWindow から QObject に変更
             embed_author=self.ui.embed_author_entry.text(),
             mention_type=m_map.get(self.ui.mention_combobox.currentText(), 'none'),
             mention_id=self.ui.mention_id_entry.text(),
+            biome_options=self._gather_biome_options(),
             message_callback=lambda text: self.signals.log_received.emit(text),
             status_callback=lambda d1, d2: self.signals.status_received.emit(d1, d2)
         )

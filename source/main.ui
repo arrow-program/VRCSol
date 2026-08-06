@@ -384,9 +384,229 @@ QPushButton:checked {
       </item>
      </layout>
     </item>
-   </layout>
-  </widget>
+
+   <!-- Biomes tab inserted here: defined in UI so gui.py can reference widgets directly -->
+   <item row="0" column="11" rowspan="24">
+    <widget class="QTabWidget" name="biome_tabwidget">
+     <property name="minimumSize">
+      <size>
+       <width>260</width>
+       <height>0</height>
+      </size>
+     </property>
+     <widget class="QWidget" name="biomes_tab">
+      <layout class="QVBoxLayout" name="verticalLayout_biomes">
+       <item>
+        <widget class="QScrollArea" name="biome_scroll">
+         <property name="widgetResizable">
+          <bool>true</bool>
+         </property>
+         <widget class="QWidget" name="biome_scroll_widget">
+          <layout class="QVBoxLayout" name="biome_scroll_layout">
+
+           <!-- Group for Normal -->
+           <item>
+            <widget class="QGroupBox" name="grp_Normal">
+             <property name="title">
+              <string>Normal</string>
+             </property>
+             <layout class="QHBoxLayout" name="h_Normal">
+              <item>
+               <widget class="QCheckBox" name="cb_Normal_screenshot">
+                <property name="text">
+                 <string>スクショ</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QCheckBox" name="cb_Normal_mention">
+                <property name="text">
+                 <string>メンション</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </widget>
+           </item>
+
+           <!-- Group for Corruption -->
+           <item>
+            <widget class="QGroupBox" name="grp_Corruption">
+             <property name="title"><string>Corruption</string></property>
+             <layout class="QHBoxLayout" name="h_Corruption">
+              <item><widget class="QCheckBox" name="cb_Corruption_screenshot"><property name="text"><string>スクショ</string></property></widget></item>
+              <item><widget class="QCheckBox" name="cb_Corruption_mention"><property name="text"><string>メンション</string></property></widget></item>
+             </layout>
+            </widget>
+           </item>
+
+           <!-- Group for Cyberspace -->
+           <item>
+            <widget class="QGroupBox" name="grp_Cyberspace">
+             <property name="title"><string>Cyberspace</string></property>
+             <layout class="QHBoxLayout" name="h_Cyberspace">
+              <item><widget class="QCheckBox" name="cb_Cyberspace_screenshot"><property name="text"><string>スクショ</string></property></widget></item>
+              <item><widget class="QCheckBox" name="cb_Cyberspace_mention"><property name="text"><string>メンション</string></property></widget></item>
+             </layout>
+            </widget>
+           </item>
+
+           <!-- Group for Dreamspace -->
+           <item>
+            <widget class="QGroupBox" name="grp_Dreamspace">
+             <property name="title"><string>Dreamspace</string></property>
+             <layout class="QHBoxLayout" name="h_Dreamspace">
+              <item><widget class="QCheckBox" name="cb_Dreamspace_screenshot"><property name="text"><string>スクショ</string></property></widget></item>
+              <item><widget class="QCheckBox" name="cb_Dreamspace_mention"><property name="text"><string>メンション</string></property></widget></item>
+             </layout>
+            </widget>
+           </item>
+
+           <!-- Group for Glitch -->
+           <item>
+            <widget class="QGroupBox" name="grp_Glitch">
+             <property name="title"><string>Glitch</string></property>
+             <layout class="QHBoxLayout" name="h_Glitch">
+              <item><widget class="QCheckBox" name="cb_Glitch_screenshot"><property name="text"><string>スクショ</string></property></widget></item>
+              <item><widget class="QCheckBox" name="cb_Glitch_mention"><property name="text"><string>メンション</string></property></widget></item>
+             </layout>
+            </widget>
+           </item>
+
+           <!-- Group for Heaven -->
+           <item>
+            <widget class="QGroupBox" name="grp_Heaven">
+             <property name="title"><string>Heaven</string></property>
+             <layout class="QHBoxLayout" name="h_Heaven">
+              <item><widget class="QCheckBox" name="cb_Heaven_screenshot"><property name="text"><string>スクショ</string></property></widget></item>
+              <item><widget class="QCheckBox" name="cb_Heaven_mention"><property name="text"><string>メンション</string></property></widget></item>
+             </layout>
+            </widget>
+           </item>
+
+           <!-- Group for Hell -->
+           <item>
+            <widget class="QGroupBox" name="grp_Hell">
+             <property name="title"><string>Hell</string></property>
+             <layout class="QHBoxLayout" name="h_Hell">
+              <item><widget class="QCheckBox" name="cb_Hell_screenshot"><property name="text"><string>スクショ</string></property></widget></item>
+              <item><widget class="QCheckBox" name="cb_Hell_mention"><property name="text"><string>メンション</string></property></widget></item>
+             </layout>
+            </widget>
+           </item>
+
+           <!-- Group for Null -->
+           <item>
+            <widget class="QGroupBox" name="grp_Null">
+             <property name="title"><string>Null</string></property>
+             <layout class="QHBoxLayout" name="h_Null">
+              <item><widget class="QCheckBox" name="cb_Null_screenshot"><property name="text"><string>スクショ</string></property></widget></item>
+              <item><widget class="QCheckBox" name="cb_Null_mention"><property name="text"><string>メンション</string></property></widget></item>
+             </layout>
+            </widget>
+           </item>
+
+           <!-- Group for Rainy -->
+           <item>
+            <widget class="QGroupBox" name="grp_Rainy">
+             <property name="title"><string>Rainy</string></property>
+             <layout class="QHBoxLayout" name="h_Rainy">
+              <item><widget class="QCheckBox" name="cb_Rainy_screenshot"><property name="text"><string>スクショ</string></property></widget></item>
+              <item><widget class="QCheckBox" name="cb_Rainy_mention"><property name="text"><string>メンション</string></property></widget></item>
+             </layout>
+            </widget>
+           </item>
+
+           <!-- Group for Sandstorm -->
+           <item>
+            <widget class="QGroupBox" name="grp_Sandstorm">
+             <property name="title"><string>Sandstorm</string></property>
+             <layout class="QHBoxLayout" name="h_Sandstorm">
+              <item><widget class="QCheckBox" name="cb_Sandstorm_screenshot"><property name="text"><string>スクショ</string></property></widget></item>
+              <item><widget class="QCheckBox" name="cb_Sandstorm_mention"><property name="text"><string>メンション</string></property></widget></item>
+             </layout>
+            </widget>
+           </item>
+
+           <!-- Group for Singurality -->
+           <item>
+            <widget class="QGroupBox" name="grp_Singurality">
+             <property name="title"><string>Singurality</string></property>
+             <layout class="QHBoxLayout" name="h_Singurality">
+              <item><widget class="QCheckBox" name="cb_Singurality_screenshot"><property name="text"><string>スクショ</string></property></widget></item>
+              <item><widget class="QCheckBox" name="cb_Singurality_mention"><property name="text"><string>メンション</string></property></widget></item>
+             </layout>
+            </widget>
+           </item>
+
+           <!-- Group for Snowy -->
+           <item>
+            <widget class="QGroupBox" name="grp_Snowy">
+             <property name="title"><string>Snowy</string></property>
+             <layout class="QHBoxLayout" name="h_Snowy">
+              <item><widget class="QCheckBox" name="cb_Snowy_screenshot"><property name="text"><string>スクショ</string></property></widget></item>
+              <item><widget class="QCheckBox" name="cb_Snowy_mention"><property name="text"><string>メンション</string></property></widget></item>
+             </layout>
+            </widget>
+           </item>
+
+           <!-- Group for Starfall -->
+           <item>
+            <widget class="QGroupBox" name="grp_Starfall">
+             <property name="title"><string>Starfall</string></property>
+             <layout class="QHBoxLayout" name="h_Starfall">
+              <item><widget class="QCheckBox" name="cb_Starfall_screenshot"><property name="text"><string>スクショ</string></property></widget></item>
+              <item><widget class="QCheckBox" name="cb_Starfall_mention"><property name="text"><string>メンション</string></property></widget></item>
+             </layout>
+            </widget>
+           </item>
+
+           <!-- Group for Windy -->
+           <item>
+            <widget class="QGroupBox" name="grp_Windy">
+             <property name="title"><string>Windy</string></property>
+             <layout class="QHBoxLayout" name="h_Windy">
+              <item><widget class="QCheckBox" name="cb_Windy_screenshot"><property name="text"><string>スクショ</string></property></widget></item>
+              <item><widget class="QCheckBox" name="cb_Windy_mention"><property name="text"><string>メンション</string></property></widget></item>
+             </layout>
+            </widget>
+           </item>
+
+           <!-- Group for Other -->
+           <item>
+            <widget class="QGroupBox" name="grp_Other">
+             <property name="title"><string>Other</string></property>
+             <layout class="QHBoxLayout" name="h_Other">
+              <item><widget class="QCheckBox" name="cb_Other_screenshot"><property name="text"><string>スクショ</string></property></widget></item>
+              <item><widget class="QCheckBox" name="cb_Other_mention"><property name="text"><string>メンション</string></property></widget></item>
+             </layout>
+            </widget>
+           </item>
+
+           <item>
+            <spacer name="verticalSpacer">
+             <property name="orientation"><enum>Qt::Vertical</enum></property>
+             <property name="sizeHint">
+              <size>
+               <width>20</width>
+               <height>40</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+
+          </layout>
+         </widget>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </widget>
+   </item>
+
+  </layout>
  </widget>
- <resources/>
+ </widget>
+ <resources/>'}]}```silent``` зазначений_OUTPUT_CHILD_POLICIES_FORWARDINGError: The edit call failed because the provided old_str was not found in the file. Please ensure old_str matches exactly one or more consecutive lines in the target file. (Exit code: 1)
  <connections/>
 </ui>
