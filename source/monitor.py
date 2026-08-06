@@ -604,7 +604,7 @@ class Monitor:
                                 last_sent_message = message
                                 last_sent_time = now
                             except Exception as e:
-                                self._send_callback(f"Send error: {e}\n")
+                                self._send_callback(traceback.format_exc())
                         else:
                             if now - last_sent_time >= 5:
                                 try:
@@ -704,7 +704,7 @@ class Monitor:
                                             except Exception:
                                                 pass
                                 except Exception as e:
-                                    self._send_callback(f"Send error: {e}\n")
+                                    self._send_callback(traceback.format_exc())
         except Exception as e:
             self._send_callback(f"Monitoring error: {e}\n")
         finally:
@@ -831,7 +831,7 @@ class Monitor:
             return True
 
         except Exception:
-            self._send_callback(traceback.format_exc())
+            self._send_callback(traceback.format_exc() + "\n")
             return False
 
     def _biome_color(self, biome_name: str):
