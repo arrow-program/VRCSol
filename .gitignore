@@ -1,4 +1,5 @@
 source/biome screenshot/*
+!source/biome screenshot/.gitkeep
 compile.bat
 source/VRCSol.spec
 .vscode
