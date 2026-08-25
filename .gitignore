@@ -1,4 +1,6 @@
-source/biome screenshot/screenshot.png
+source/biome screenshot/*
 compile.bat
 source/VRCSol.spec
 .vscode
+source/config.json
+source/log
